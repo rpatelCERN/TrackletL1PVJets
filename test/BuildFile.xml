@@ -1,5 +1,5 @@
 <environment>
-  <library   file="*.cc" name="TrackFindingTrackletTests">
+  <library   file="*.cc" name="TrackJetFindingTracklet">
     <flags   EDM_PLUGIN="1"/>
     <use   name="FWCore/Framework"/>
     <use   name="FWCore/PluginManager"/>
