@@ -1,0 +1,18 @@
+<library   file="*.cc" name="TrackVtxFindingTrackletPlugins">
+  <use   name="L1Trigger/TrackTrigger"/>
+  <use   name="L1Trigger/TrackFindingTracklet"/>
+  <use   name="SimGeneral/HepPDTRecord"/>
+  <use   name="FastSimulation/BaseParticlePropagator"/>
+  <use   name="RecoJets/JetProducers"/>
+  <use   name="SimDataFormats/GeneratorProducts"/>
+  <use   name="SimDataFormats/TrackingAnalysis"/>
+  <use   name="SimTracker/TrackTriggerAssociation"/>
+  <use   name="PhysicsTools/UtilAlgos"/>
+  <use   name="CommonTools/UtilAlgos"/>
+  <use   name="DataFormats/L1TrackTrigger"/>
+  <use   name="DataFormats/L1TVertex"/>
+  <use   name="DataFormats/HepMCCandidate"/>
+  <use   name="hepmc"/>
+  <use   name="root"/>
+  <flags   EDM_PLUGIN="1"/>
+</library>
