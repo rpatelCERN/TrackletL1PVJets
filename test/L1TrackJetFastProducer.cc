@@ -161,6 +161,8 @@ private:
 
   TTree* eventTree;
   // primary vertex
+  std::vector<float>* m_pv_L1recofakesumpt;
+  std::vector<float>* m_pv_L1recotruesumpt;
   std::vector<float>* m_pv_L1recosumpt;
   std::vector<float>* m_pv_L1reco;
   std::vector<float>* m_pv_L1TP;
@@ -373,6 +375,7 @@ void L1TrackJetFastProducer::beginJob()
   m_matchtrk_chi2  = new std::vector<float>;
   m_matchtrk_nstub = new std::vector<int>;
   
+  m_pv_L1recotruesumpt = new std::vector<float>;
   m_pv_L1recosumpt = new std::vector<float>;
   m_pv_L1reco = new std::vector<float>;
   m_pv_L1TP = new std::vector<float>;
@@ -400,6 +403,7 @@ void L1TrackJetFastProducer::beginJob()
   m_recojet_p = new std::vector<float>;
   m_recojet_pt = new std::vector<float>;
   m_recojet_ntracks = new std::vector<int>;
+  m_recojet_tp_sumpt = new std::vector<float>;
   m_recojet_truetp_sumpt = new std::vector<float>;
 
 
@@ -461,6 +465,8 @@ void L1TrackJetFastProducer::beginJob()
   eventTree->Branch("matchtrk_nstub",   &m_matchtrk_nstub);
   }
 
+    eventTree->Branch("pv_L1recofakesumpt", &m_pv_L1recofakesumpt);
+    eventTree->Branch("pv_L1recotruesumpt", &m_pv_L1recotruesumpt);
     eventTree->Branch("pv_L1recosumpt", &m_pv_L1recosumpt);
     eventTree->Branch("pv_L1reco", &m_pv_L1reco);
     eventTree->Branch("pv_L1TP", &m_pv_L1TP);
@@ -575,7 +581,7 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
   m_recojet_p->clear();
   m_recojet_ntracks->clear();
   m_recojet_truetp_sumpt->clear();
-
+  m_recojet_tp_sumpt->clear();
   m_tpjet_eta->clear();
   m_tpjet_pt->clear();
   m_tpjet_vz->clear();
@@ -584,6 +590,8 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
   m_tpjet_ntracks->clear();
   m_tpjet_tp_sumpt->clear();
   m_tpjet_truetp_sumpt->clear();
+  m_pv_L1recofakesumpt->clear();
+  m_pv_L1recotruesumpt->clear();
   m_pv_L1recosumpt->clear();
   m_pv_L1reco->clear();
   m_pv_L1TPsumpt->clear();
@@ -617,7 +625,6 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
   // MC truth association maps
    edm::Handle< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > MCTruthTTStubHandle;
    iEvent.getByToken(ttStubMCTruthToken_, MCTruthTTStubHandle);
- if(MCTruthTTStubHandle.isValid())std::cout<<"Have Stub Truth Handle" <<std::endl;
   edm::Handle< TTTrackAssociationMap< Ref_Phase2TrackerDigi_ > > MCTruthTTTrackHandle;
   iEvent.getByToken(ttTrackMCTruthToken_, MCTruthTTTrackHandle);
 
@@ -641,11 +648,27 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
   }
   edm::Handle< l1t::VertexCollection >L1TkPrimaryVertexHandle;
   iEvent.getByToken(L1VertexToken_, L1TkPrimaryVertexHandle);
-  if(L1TkPrimaryVertexHandle.isValid()){
+ if(L1TkPrimaryVertexHandle.isValid()){
 	m_pv_L1reco->push_back(L1TkPrimaryVertexHandle->begin()->z0());
 	//add Vertex True quality, Vertex Fake Content, total sumpT, and number of tracks 
 	std::vector<edm::Ptr< TTTrack<Ref_Phase2TrackerDigi_> > >Vtxtracks=L1TkPrimaryVertexHandle->begin()->tracks();
-	std::vector< TTTrack< Ref_Phase2TrackerDigi_ > >::const_iterator iterL1Track=Vtxtracks->begin();;		
+	//std::cout<<"Ntracks in Vertex "<<Vtxtracks.size()<<std::endl;
+	float sumpt=0;
+	float trueContent=0;
+	float fakeContent=0;
+	for(unsigned int t=0; 	t<Vtxtracks.size(); ++t){
+		sumpt=Vtxtracks[t]->getMomentum(L1Tk_nPar).perp()+sumpt;
+		//if(Vtxtracks[t].isAvailable())std::cout<<"Has a collection in memory "<<Vtxtracks[t].id()<<std::endl;
+		//edm::Ptr< TTTrack< Ref_Phase2TrackerDigi_ > > l1track_ptr(Vtxtracks[t]);	
+		//if(MCTruthTTTrackHandle->isGenuine(l1track_ptr))std::cout<<"MC Handle is valid "<<std::endl;//trueContent=trueContent+Vtxtracks[t]->getMomentum(L1Tk_nPar).perp();
+		if(MCTruthTTTrackHandle->isGenuine(Vtxtracks[t]))trueContent=trueContent+Vtxtracks[t]->getMomentum(L1Tk_nPar).perp();
+		else fakeContent=fakeContent+Vtxtracks[t]->getMomentum(L1Tk_nPar).perp();
+	}
+	//std::vector< TTTrack< Ref_Phase2TrackerDigi_ > >::const_iterator iterL1Track=Vtxtracks->begin();;		
+	//std::cout<<"Vtx Sum pT "<<trueContent<<std::endl;
+	m_pv_L1recofakesumpt->push_back(fakeContent);
+	m_pv_L1recotruesumpt->push_back(trueContent);
+	m_pv_L1recosumpt->push_back(sumpt);	
 }
   // -----------------------------------------------------------------------------------------------
   // more for TTStubs
@@ -723,8 +746,8 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
 	RecoJetInputs_.clear();
 
     for ( iterL1Track = TTTrackHandle->begin(); iterL1Track != TTTrackHandle->end(); iterL1Track++ ) {
-      
       edm::Ptr< TTTrack< Ref_Phase2TrackerDigi_ > > l1track_ptr(TTTrackHandle, this_l1track);
+
       this_l1track++;
       float tmp_trk_p   = iterL1Track->getMomentum(L1Tk_nPar).mag();
       float tmp_trk_pt   = iterL1Track->getMomentum(L1Tk_nPar).perp();
@@ -1123,6 +1146,7 @@ for(unsigned int j=0; j<JetOutputs_.size(); ++j){
 JetOutputs_.clear();
 fjConstituents_.clear();
 JetVz_.clear();
+
 FillFastJets(*m_trk_pt, *m_trk_eta, *m_trk_phi, *m_trk_p, *m_trk_z0, CONESize, JetOutputs_, fjConstituents_, JetVz_);
 for(unsigned int j=0; j<JetOutputs_.size(); ++j){
         TLorentzVector temp;
@@ -1138,7 +1162,7 @@ for(unsigned int j=0; j<JetOutputs_.size(); ++j){
 	for(unsigned int i=0; i<fjConstituents_.size(); ++i){
         	auto index =fjConstituents_[i].user_index();	
 		int eventId=m_trk_genuine->at(index);
-		if(eventId>0)truesumpt=truesumpt+m_tp_pt->at(index);
+		if(eventId>0)truesumpt=truesumpt+m_trk_pt->at(index);
 		sumpt=sumpt+m_trk_pt->at(index);
 	}
 	m_recojet_tp_sumpt->push_back(sumpt);
@@ -1147,8 +1171,8 @@ for(unsigned int j=0; j<JetOutputs_.size(); ++j){
 JetOutputs_.clear();
 fjConstituents_.clear();
 JetVz_.clear();
-//FillFastJets(*m_matchtrk_pt, *m_matchtrk_eta, *m_matchtrk_phi, *m_matchtrk_p, *m_matchtrk_z0, CONESize, JetOutputs_, fjConstituents_, JetVz_);
 
+//FillFastJets(*m_matchtrk_pt, *m_matchtrk_eta, *m_matchtrk_phi, *m_matchtrk_p, *m_matchtrk_z0, CONESize, JetOutputs_, fjConstituents_, JetVz_);
 eventTree->Fill();
 
 } // end of analyze()

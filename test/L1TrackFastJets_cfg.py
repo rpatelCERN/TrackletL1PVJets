@@ -49,9 +49,9 @@ process.L1TrackJetsFast= cms.EDAnalyzer('L1TrackJetFastProducer',
 
      GenParticleInputTag = cms.InputTag("genParticles",""),
      TrackingParticleInputTag = cms.InputTag("mix", "MergedTrackTruth"),
-     L1TrackInputTag = cms.InputTag("TTTracksFromTracklet", "Level1TTTracks"),
-     MCTruthTrackInputTag = cms.InputTag("TTTrackAssociatorFromPixelDigis", "Level1TTTracks","RERUNL1"), ## MCTruth input
-     MCTruthStubInputTag = cms.InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted","RERUNL1"),
+     L1TrackInputTag = cms.InputTag("TTTracksFromTracklet", "Level1TTTracks","L1Tracklet"),
+     MCTruthTrackInputTag = cms.InputTag("TTTrackAssociatorFromPixelDigis", "Level1TTTracks","L1Tracklet"), ## MCTruth input
+     MCTruthStubInputTag = cms.InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted","L1Tracklet"),
      GenJetAK4=cms.InputTag("ak4GenJetsNoNu"),
      RecoVertexInputTag=cms.InputTag("L1TechPropPrimaryVertexProducer", "l1vertices"),
      MCVertexInputTag=cms.InputTag("L1TkPrimaryVertexMC", ""),
