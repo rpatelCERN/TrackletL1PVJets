@@ -283,7 +283,6 @@ float vtxZ=-999;
     if(ztr!=ztr)continue; //just if there is nan
     if (pt < ptmin) continue;
     if (fabs(ztr) > ZMAX ) continue;
-    if (chi2 > CHI2MAX) continue;
    
 
 	// get the number of stubs and the number of stubs in PS layers
@@ -299,6 +298,7 @@ float vtxZ=-999;
 	continue;
       }
 	nstubs=theStubs.size();
+    if (chi2/(2*nstubs-4) > CHI2MAX) continue;
       // loop over the stubs
       for (unsigned int istub=0; istub<(unsigned int)theStubs.size(); istub++) {
         //bool genuine = theStubs.at(istub)->isGenuine();
