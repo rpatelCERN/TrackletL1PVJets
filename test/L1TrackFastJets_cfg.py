@@ -63,9 +63,9 @@ process.L1TrackJetsFast= cms.EDAnalyzer('L1TrackJetFastProducer',
      ZMAX = cms.double ( 15. ) ,        # in cm
      CHI2MAX = cms.double( 5. ),
      PTMINTRA = cms.double( 2.),        # PTMIN of L1Tracks, in GeV
-     TP_minNStub = cms.int32( 4 ) ,       # minimum number of stubs
+     TP_minNStub = cms.int32( 5) ,       # minimum number of stubs
      nStubsPSmin = cms.int32( -1 ),       # minimum number of stubs in PS modules
-     TP_minNStubLayer=cms.int32(4),
+     TP_minNStubLayer=cms.int32(5),
      PTMAX = cms.double( 200. ),          # in GeV. When PTMAX > 0, tracks with PT above PTMAX are considered as
                                          # mismeasured and are treated according to HighPtTracks below.
                                          # When PTMAX < 0, no special treatment is done for high PT tracks.

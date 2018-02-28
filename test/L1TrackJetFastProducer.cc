@@ -419,6 +419,7 @@ void L1TrackJetFastProducer::beginJob()
   eventTree = fs->make<TTree>("eventTree", "Event tree");
   
   if (SaveAllTracks) {
+    eventTree->Branch("trk_p",    &m_trk_p);
     eventTree->Branch("trk_pt",    &m_trk_pt);
     eventTree->Branch("trk_eta",   &m_trk_eta);
     eventTree->Branch("trk_phi",   &m_trk_phi);
@@ -786,7 +787,8 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
 	if (tmp_trk_unknown) cout << " (is unknown)" << endl; 
 	if (tmp_trk_combinatoric) cout << " (is combinatoric)" << endl; 
       }
-      if(tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) && tmp_trk_nstub>=TP_minNStub ){
+      if(tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) 
+	&& tmp_trk_nstub>=TP_minNStub ){
       m_trk_p ->push_back(tmp_trk_p); 
       m_trk_pt ->push_back(tmp_trk_pt);
       m_trk_eta->push_back(tmp_trk_eta);
