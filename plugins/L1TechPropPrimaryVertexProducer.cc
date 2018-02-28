@@ -315,9 +315,9 @@ float vtxZ=-999;
 	//} // endif genuine
        } // end loop over stubs
 
-        if (imode == 1 || imode == 2 ) {
+        //if (imode == 1 || imode == 2 ) {
             if (nPS < nPSmin) continue;
-        }
+        //}
 	if ( nstubs < nmin) continue;
 	     SelectedTracks.push_back(l1track_ptr);
 	     htmp -> Fill( ztr );
