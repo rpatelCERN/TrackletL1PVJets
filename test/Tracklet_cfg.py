@@ -23,7 +23,9 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 # input
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 Source_Files = cms.untracked.vstring(
-	'file:/fdata/hepx/store/user/rish/CMSSW_9_2_0/src/L1Trigger/TrackFindingTracklet/test/TTBarPU200/%s' %sys.argv[2]
+	#'file:/fdata/hepx/store/user/rish/CMSSW_9_2_0/src/L1Trigger/TrackFindingTracklet/test/TTBarPU200/%s' %sys.argv[2]
+	'file:/fdata/hepx/store/user/rish/L1TrackJetsVertexGroup/CMSSW_9_2_0/src/L1Trigger/TrackFindingTracklet/test/PU_QCD_10_30_sample_3_TkOnly.root'
+	#'file:/fdata/hepx/store/user/rish/CMSSW_9_2_0/src/L1Trigger/TrackFindingTracklet/test/TTBarPU200/%s' %sys.argv[2]
     )
 process.source = cms.Source("PoolSource", fileNames = Source_Files)
 
