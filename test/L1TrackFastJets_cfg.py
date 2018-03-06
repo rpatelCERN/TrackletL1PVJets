@@ -35,7 +35,7 @@ process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
 Source_Files = cms.untracked.vstring(             
 #"file:Tracklets_0.root"
-"file:PrimaryVtx_%s.root" %sys.argv[2]  
+"file:/nfs/hepwrk01/work/rish/PrimaryVtx_%s.root" %sys.argv[2]  
 #'file:/fdata/hepx/store/user/rish/CMSSW_9_2_0/src/L1Trigger/TrackFindingTracklet/test/TTBarPU200/%s' %sys.argv[2],
 )
 process.source = cms.Source("PoolSource", fileNames = Source_Files)
