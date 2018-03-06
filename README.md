@@ -12,4 +12,10 @@ git fetch cms-l1t-offline
 
 git cms-merge-topic -u cms-l1t-offline:l1t-phase2-v1.14.1
 
+git clone https://gitlab.cern.ch/L1TrackJetsPrimaryVtx/TrackletL1PVJets.git
+
+mv TrackletL1PVJets ./L1Trigger
+
+git clone https://gitlab.cern.ch/L1TrackJetsPrimaryVtx/L1TVertexDataFormat.git DataFormats/L1TVertex
+
 

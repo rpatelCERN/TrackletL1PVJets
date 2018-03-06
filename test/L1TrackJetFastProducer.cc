@@ -613,6 +613,7 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
 
    edm::Handle< std::vector< reco::GenParticle> > GenParticleHandle;
    iEvent.getByToken(HEPMCVertexToken_,GenParticleHandle);
+    if(GenParticleHandle.isValid()){
         vector<reco::GenParticle>::const_iterator genpartIter ;
     	int leptonicCount=0;
         for (genpartIter = GenParticleHandle->begin(); genpartIter != GenParticleHandle->end(); ++genpartIter) {
@@ -623,6 +624,7 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
 		if( abs(genpartIter ->daughter(0)->pdgId())==11  ||  abs(genpartIter ->daughter(0)->pdgId())==13 ||  abs(genpartIter ->daughter(0)->pdgId())==15){++leptonicCount;}
 	}
   m_MC_lep->push_back(leptonicCount);
+     }
   // MC truth association maps
    edm::Handle< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > MCTruthTTStubHandle;
    iEvent.getByToken(ttStubMCTruthToken_, MCTruthTTStubHandle);

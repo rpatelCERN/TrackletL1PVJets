@@ -21,9 +21,11 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 
 
 # input
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(10))
 Source_Files = cms.untracked.vstring(
-	'file:/fdata/hepx/store/user/rish/CMSSW_9_2_0/src/L1Trigger/TrackFindingTracklet/test/TTBarPU200/%s' %sys.argv[2]
+	'file:/mnt/hadoop/store/user/safarzad/SingleNeutrino/crab_Phase2_Nu/170628_155502/0000/reprocess_L1T_L1TTTTracklet_step2_TT_PhaseIISpring17D-PU200_pilot_%s.root'
+%sys.argv[2],
+	#'file:/fdata/hepx/store/user/rish/CMSSW_9_2_0/src/L1Trigger/TrackFindingTracklet/test/TTBarPU200/%s' %sys.argv[2]
 	#'file:/fdata/hepx/store/user/rish/L1TrackJetsVertexGroup/CMSSW_9_2_0/src/L1Trigger/TrackFindingTracklet/test/PU_QCD_10_30_sample_3_TkOnly.root'
 	#'file:/fdata/hepx/store/user/rish/CMSSW_9_2_0/src/L1Trigger/TrackFindingTracklet/test/TTBarPU200/%s' %sys.argv[2]
     )
@@ -45,7 +47,7 @@ process.TTTracksWithTruth = cms.Path(process.L1TrackletTracksWithAssociators) #r
 
 # output module
 process.out = cms.OutputModule( "PoolOutputModule",
-                                fileName = cms.untracked.string("Tracklets_%s.root" %sys.argv[3]),
+                                fileName = cms.untracked.string("Tracklets_%s.root" %sys.argv[2]),
                                 fastCloning = cms.untracked.bool( False ),
                                 outputCommands = cms.untracked.vstring('drop *',
                                                                        'keep *_TTTrack*_Level1TTTracks_*', 
