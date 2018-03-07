@@ -613,9 +613,8 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
 
    edm::Handle< std::vector< reco::GenParticle> > GenParticleHandle;
    iEvent.getByToken(HEPMCVertexToken_,GenParticleHandle);
+        vector<reco::GenParticle>::const_iterator genpartIter ;
     	int leptonicCount=0;
-//if(GenParticleHandle.isValid()){ 
-       vector<reco::GenParticle>::const_iterator genpartIter ;
         for (genpartIter = GenParticleHandle->begin(); genpartIter != GenParticleHandle->end(); ++genpartIter) {
 		if (abs(genpartIter ->pdgId())!=24)continue;
 		//std::cout<<"W-boson mother "<<genpartIter ->mother(0)->pdgId()<<std::endl;
@@ -623,7 +622,6 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
 		if(abs(genpartIter ->mother(0)->pdgId())!=6 && abs(genpartIter ->mother(0)->pdgId())!=24 )continue;
 		if( abs(genpartIter ->daughter(0)->pdgId())==11  ||  abs(genpartIter ->daughter(0)->pdgId())==13 ||  abs(genpartIter ->daughter(0)->pdgId())==15){++leptonicCount;}
 	}
-//}
   m_MC_lep->push_back(leptonicCount);
   // MC truth association maps
    edm::Handle< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > MCTruthTTStubHandle;
