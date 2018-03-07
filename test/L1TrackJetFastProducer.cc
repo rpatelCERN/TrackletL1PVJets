@@ -161,7 +161,7 @@ private:
 
   TTree* eventTree;
   // primary vertex
-  std::vector<float>* m_pv_L1recofakesumpt;
+  //std::vector<float>* m_pv_L1recofakesumpt;
   std::vector<float>* m_pv_L1recotruesumpt;
   std::vector<float>* m_pv_L1recosumpt;
   std::vector<float>* m_pv_L1reco;
@@ -179,6 +179,7 @@ private:
   std::vector<float>* m_trk_d0;   // (filled if L1Tk_nPar==5, else 999)
   std::vector<float>* m_trk_z0;
   std::vector<float>* m_trk_chi2; 
+  std::vector<int>*   m_trk_psnstub;
   std::vector<int>*   m_trk_nstub;
   std::vector<int>*   m_trk_genuine;
   std::vector<int>*   m_trk_loose;
@@ -249,9 +250,6 @@ private:
   std::vector<float>* m_tpjet_tp_sumpt;
   std::vector<float>* m_tpjet_truetp_sumpt;
   std::vector<float>* m_tpjet_pt;
-  std::vector<float>* m_jet_matchtrk_sumpt;
-  std::vector<float>* m_jet_loosematchtrk_sumpt;
-  std::vector<float>* m_jet_trk_sumpt;
 };
 
 
@@ -338,6 +336,7 @@ void L1TrackJetFastProducer::beginJob()
   m_trk_d0    = new std::vector<float>;
   m_trk_chi2  = new std::vector<float>;
   m_trk_nstub = new std::vector<int>;
+  m_trk_psnstub = new std::vector<int>;
   m_trk_genuine      = new std::vector<int>;
   m_trk_loose        = new std::vector<int>;
   m_trk_unknown      = new std::vector<int>;
@@ -427,6 +426,7 @@ void L1TrackJetFastProducer::beginJob()
     eventTree->Branch("trk_z0",    &m_trk_z0);
     eventTree->Branch("trk_chi2",  &m_trk_chi2);
     eventTree->Branch("trk_nstub", &m_trk_nstub);
+    eventTree->Branch("trk_psnstub", &m_trk_psnstub);
 
     eventTree->Branch("trk_genuine",      &m_trk_genuine);
     eventTree->Branch("trk_loose",        &m_trk_loose);
@@ -466,7 +466,7 @@ void L1TrackJetFastProducer::beginJob()
   eventTree->Branch("matchtrk_nstub",   &m_matchtrk_nstub);
   }
 
-    eventTree->Branch("pv_L1recofakesumpt", &m_pv_L1recofakesumpt);
+    //eventTree->Branch("pv_L1recofakesumpt", &m_pv_L1recofakesumpt);
     eventTree->Branch("pv_L1recotruesumpt", &m_pv_L1recotruesumpt);
     eventTree->Branch("pv_L1recosumpt", &m_pv_L1recosumpt);
     eventTree->Branch("pv_L1reco", &m_pv_L1reco);
@@ -525,6 +525,7 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
     m_trk_z0->clear();
     m_trk_chi2->clear();
     m_trk_nstub->clear();
+    m_trk_psnstub->clear();
     m_trk_genuine->clear();
     m_trk_loose->clear();
     m_trk_unknown->clear();
@@ -591,7 +592,7 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
   m_tpjet_ntracks->clear();
   m_tpjet_tp_sumpt->clear();
   m_tpjet_truetp_sumpt->clear();
-  m_pv_L1recofakesumpt->clear();
+  //m_pv_L1recofakesumpt->clear();
   m_pv_L1recotruesumpt->clear();
   m_pv_L1recosumpt->clear();
   m_pv_L1reco->clear();
@@ -610,11 +611,11 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
     edm::Handle<std::vector<reco::GenJet> >GenJetsAK4Handle;
   iEvent.getByToken(GenJetCollectionToken_,GenJetsAK4Handle); 
 
-
    edm::Handle< std::vector< reco::GenParticle> > GenParticleHandle;
    iEvent.getByToken(HEPMCVertexToken_,GenParticleHandle);
-        vector<reco::GenParticle>::const_iterator genpartIter ;
     	int leptonicCount=0;
+if(GenParticleHandle.isValid()){  
+      vector<reco::GenParticle>::const_iterator genpartIter ;
         for (genpartIter = GenParticleHandle->begin(); genpartIter != GenParticleHandle->end(); ++genpartIter) {
 		if (abs(genpartIter ->pdgId())!=24)continue;
 		//std::cout<<"W-boson mother "<<genpartIter ->mother(0)->pdgId()<<std::endl;
@@ -622,6 +623,7 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
 		if(abs(genpartIter ->mother(0)->pdgId())!=6 && abs(genpartIter ->mother(0)->pdgId())!=24 )continue;
 		if( abs(genpartIter ->daughter(0)->pdgId())==11  ||  abs(genpartIter ->daughter(0)->pdgId())==13 ||  abs(genpartIter ->daughter(0)->pdgId())==15){++leptonicCount;}
 	}
+ }
   m_MC_lep->push_back(leptonicCount);
   // MC truth association maps
    edm::Handle< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > MCTruthTTStubHandle;
@@ -667,7 +669,7 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
 	}
 	//std::vector< TTTrack< Ref_Phase2TrackerDigi_ > >::const_iterator iterL1Track=Vtxtracks->begin();;		
 	//std::cout<<"Vtx Sum pT "<<trueContent<<std::endl;
-	m_pv_L1recofakesumpt->push_back(fakeContent);
+	//m_pv_L1recofakesumpt->push_back(fakeContent);
 	m_pv_L1recotruesumpt->push_back(trueContent);
 	m_pv_L1recosumpt->push_back(sumpt);	
 }
@@ -770,7 +772,19 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       if (tmp_trk_pt < TP_minPt) continue;
       if (fabs(tmp_trk_eta) > TP_maxEta) continue;
       if (fabs(tmp_trk_z0) > TP_maxZ0) continue;
+	        std::vector< edm::Ref< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > >, TTStub< Ref_Phase2TrackerDigi_ > > >  theStubs =  iterL1Track-> getStubRefs() ;
+        int nPS=0;
+        for (unsigned int istub=0; istub<(unsigned int)theStubs.size(); istub++) {
+          bool isPS = false;
+       DetId detId( theStubs.at(istub)->getDetId() );
+       if (detId.det() == DetId::Detector::Tracker) {
+         if (detId.subdetId() == StripSubdetector::TOB && tTopo->tobLayer(detId) <= 3)  isPS = true;
+         else if (detId.subdetId() == StripSubdetector::TID && tTopo->tidRing(detId) <= 9)  isPS = true;
+       }
+       if (isPS) nPS ++;
+        }
 
+        std::cout<<"nPS hits "<<nPS<<std::endl;
       int tmp_trk_genuine = 0;
       int tmp_trk_loose = 0;
       int tmp_trk_unknown = 0;
@@ -797,6 +811,7 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       if (L1Tk_nPar==5) m_trk_d0->push_back(tmp_trk_d0);
       else m_trk_d0->push_back(999.);
       m_trk_chi2 ->push_back(tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar));
+      m_trk_psnstub->push_back(nPS);
       m_trk_nstub->push_back(tmp_trk_nstub);
       m_trk_genuine->push_back(tmp_trk_genuine);
       m_trk_loose->push_back(tmp_trk_loose);
@@ -1032,9 +1047,7 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
 	// further require L1 track to be (loosely) genuine, that there is only one TP matched to the track
 	// + have >= L1Tk_minNStub stubs for it to be a valid match (only relevant is your track collection
 	// e.g. stores 3-stub tracks but at plot level you require >= 4 stubs (--> tracklet case)
-
 	int tmp_trk_nstub = matchedTracks.at(it)->getStubRefs().size();
-
 	if (tmp_trk_nstub < TP_minNStub) continue;
 	
 	float dmatch_pt  = 999;
