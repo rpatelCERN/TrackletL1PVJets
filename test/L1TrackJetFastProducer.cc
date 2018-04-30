@@ -36,9 +36,14 @@
 #include "Geometry/Records/interface/StackedTrackerGeometryRecord.h"
 #include "DataFormats/JetReco/interface/GenJetCollection.h"
 #include "DataFormats/L1TrackTrigger/interface/L1TkPrimaryVertex.h"
+#include "DataFormats/L1TrackTrigger/interface/L1TkJetParticle.h"
 #include "DataFormats/L1TVertex/interface/Vertex.h"
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "Geometry/CommonDetUnit/interface/GeomDetUnit.h"
+#include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
+#include "Geometry/TrackerGeometryBuilder/interface/PixelGeomDetUnit.h"
+#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 ////////////////////////////
 // DETECTOR GEOMETRY HEADERS
 #include "MagneticField/Engine/interface/MagneticField.h"
@@ -102,8 +107,8 @@ public:
   virtual void endJob();
   virtual void analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup);
  // virtual void FillJets(std::vector<fastjet::PseudoJet>  JetInputs_, bool Prompt, bool TrueTP, edm::Handle< std::vector< TrackingParticle > > TrackingParticleHandle);  
-  virtual void FillFastJets(std::vector<float>pt, std::vector<float>eta, std::vector<float>phi, std::vector<float>p, std::vector<float>z0, float conesize, std::vector<fastjet::PseudoJet> &JetOutputs_, std::vector<fastjet::PseudoJet> &fjConstituents, std::vector<float>&JetVz);
-
+  virtual void FillFastJets(std::vector<float>pt, std::vector<float>eta, std::vector<float>phi, std::vector<float>p, std::vector<float>z0, std::vector<int> TruthID, float conesize, std::vector<fastjet::PseudoJet> &JetOutputs_, std::vector<int>&JetNtracks, std::vector<float>&JetVz, std::vector<float>&TrueSumPt);
+  virtual void FillCaloJets(edm::Handle< l1t::JetBxCollection> CentralJetHandle);
 protected:
   
 private:
@@ -116,6 +121,7 @@ private:
   bool DebugMode;       // lots of debug printout statements
   bool SaveAllTracks;   // store in ntuples not only truth-matched tracks but ALL tracks
   int L1Tk_nPar;        // use 4 or 5 parameter track fit? 
+  int NPS_minStubs;
   int TP_minNStub;      // require TPs to have >= minNStub (defining efficiency denominator) (==0 means to only require >= 1 cluster)
   int TP_minNStubLayer; // require TPs to have stubs in >= minNStubLayer layers/disks (defining efficiency denominator)
   double TP_minPt;      // save TPs with pt > minPt 
@@ -137,7 +143,9 @@ private:
   edm::InputTag RecoVertexInputTag;
   edm::InputTag  GenParticleInputTag;
   edm::InputTag GenJetAK4;
+  edm::InputTag CaloJetInputTag;
 
+  edm::EDGetTokenT< l1t::JetBxCollection >L1CaloJetsToken_;
   edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > ttStubMCTruthToken_;
 
   edm::EDGetTokenT< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > > ttTrackToken_;
@@ -154,6 +162,8 @@ private:
   std::vector<fastjet::PseudoJet>  GenJetInputs_;
   std::vector<fastjet::PseudoJet>  JetInputs_;
   std::vector<float>JetVz_;
+  std::vector<int>JetNtracks_;
+  std::vector<float>JetEventID_;
   std::vector<fastjet::PseudoJet> JetOutputs_;
   std::vector<fastjet::PseudoJet> fjConstituents_;
   //-----------------------------------------------------------------------------------------------
@@ -250,6 +260,12 @@ private:
   std::vector<float>* m_tpjet_tp_sumpt;
   std::vector<float>* m_tpjet_truetp_sumpt;
   std::vector<float>* m_tpjet_pt;
+
+  std::vector<float>* m_calojet_vz;
+  std::vector<float>* m_calojet_p;
+  std::vector<float>* m_calojet_phi;
+  std::vector<float>* m_calojet_eta;
+  std::vector<float>* m_calojet_pt;
 };
 
 
@@ -270,6 +286,7 @@ L1TrackJetFastProducer::L1TrackJetFastProducer(edm::ParameterSet const& iConfig)
   SaveAllTracks    = iConfig.getParameter< bool >("SaveAllTracks");
   L1Tk_nPar        = iConfig.getParameter< int >("L1Tk_nPar");
   //Cuts on Tracks
+  NPS_minStubs= iConfig.getParameter<int>("nStubsPSmin");
   TP_minNStub      = iConfig.getParameter< int >("TP_minNStub");
   TP_minNStubLayer = iConfig.getParameter< int >("TP_minNStubLayer");
   TP_minPt         = iConfig.getParameter< double >("PTMINTRA");
@@ -287,6 +304,8 @@ L1TrackJetFastProducer::L1TrackJetFastProducer(edm::ParameterSet const& iConfig)
   MCTruthStubInputTag = iConfig.getParameter<edm::InputTag>("MCTruthStubInputTag");
   TrackingParticleInputTag = iConfig.getParameter<edm::InputTag>("TrackingParticleInputTag");
   GenJetAK4=iConfig.getParameter<edm::InputTag>("GenJetAK4");
+  CaloJetInputTag = iConfig.getParameter<edm::InputTag>("CaloJetInputTag");
+
   HEPMCVertexToken_=consumes< std::vector< reco::GenParticle> >(GenParticleInputTag);
   ttTrackToken_ = consumes< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > >(L1TrackInputTag);
   ttTrackMCTruthToken_ = consumes< TTTrackAssociationMap< Ref_Phase2TrackerDigi_ > >(MCTruthTrackInputTag);
@@ -296,7 +315,7 @@ L1TrackJetFastProducer::L1TrackJetFastProducer(edm::ParameterSet const& iConfig)
   MCVertexToken_=consumes<L1TkPrimaryVertexCollection>(MCVertexInputTag);
   TPVertexToken_=consumes<L1TkPrimaryVertexCollection>(TrueVertexInputTag);
   L1VertexToken_=consumes<l1t::VertexCollection>(RecoVertexInputTag);
-
+  L1CaloJetsToken_=consumes<l1t::JetBxCollection>(CaloJetInputTag);
 }
 
 /////////////
@@ -405,6 +424,11 @@ void L1TrackJetFastProducer::beginJob()
   m_recojet_tp_sumpt = new std::vector<float>;
   m_recojet_truetp_sumpt = new std::vector<float>;
 
+  m_calojet_eta = new std::vector<float>;
+  m_calojet_phi = new std::vector<float>;
+  m_calojet_vz = new std::vector<float>;
+  m_calojet_p = new std::vector<float>;
+  m_calojet_pt = new std::vector<float>;
 
   m_tpjet_eta = new std::vector<float>;
   m_tpjet_vz = new std::vector<float>;
@@ -483,6 +507,11 @@ void L1TrackJetFastProducer::beginJob()
     eventTree->Branch("tpjet_ntracks", &m_tpjet_ntracks);
     eventTree->Branch("tpjet_tp_sumpt", &m_tpjet_tp_sumpt);
     eventTree->Branch("tpjet_truetp_sumpt", &m_tpjet_truetp_sumpt);
+    eventTree->Branch("calojet_eta", &m_calojet_eta);
+    eventTree->Branch("calojet_vz", &m_calojet_p);
+    eventTree->Branch("calojet_p", &m_calojet_p);
+    eventTree->Branch("calojet_pt", &m_calojet_pt);
+    eventTree->Branch("calojet_phi", &m_calojet_phi);
     eventTree->Branch("recojet_eta", &m_recojet_eta);
     eventTree->Branch("recojet_vz", &m_recojet_vz);
     eventTree->Branch("recojet_p", &m_recojet_p);
@@ -539,6 +568,7 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
     m_trk_matchtp_dxy->clear();
   }
   
+  m_tp_p->clear();
   m_tp_pt->clear();
   m_tp_eta->clear();
   m_tp_phi->clear();
@@ -631,6 +661,9 @@ if(GenParticleHandle.isValid()){
   edm::Handle< TTTrackAssociationMap< Ref_Phase2TrackerDigi_ > > MCTruthTTTrackHandle;
   iEvent.getByToken(ttTrackMCTruthToken_, MCTruthTTTrackHandle);
 
+  edm::Handle< l1t::JetBxCollection> CentralJetHandle;
+  iEvent.getByToken(L1CaloJetsToken_,CentralJetHandle); //for Central bunch crossing this will be zero CentralJetHandle->at(0);
+
   // tracking particles
   edm::Handle< std::vector< TrackingParticle > > TrackingParticleHandle;
   iEvent.getByToken(TrackingParticleToken_, TrackingParticleHandle);
@@ -685,13 +718,14 @@ if(GenParticleHandle.isValid()){
   iSetup.get<TrackerDigiGeometryRecord>().get(tGeomHandle);
 
   const TrackerTopology* const tTopo = tTopoHandle.product();
-  //const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
+  const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
 //Gen Jet branches
 std::vector<float>genConstpt;
 std::vector<float>genConsteta;
 std::vector<float>genConstphi;
 std::vector<float>genConstp;
 std::vector<float>genConstz;
+std::vector<int>genID;
 if(GenJetsAK4Handle.isValid()){
         for (unsigned iGenJet = 0; iGenJet < GenJetsAK4Handle->size(); ++iGenJet) {
 
@@ -713,6 +747,7 @@ if(GenJetsAK4Handle.isValid()){
 		genConstp.push_back(genJet.getGenConstituent(g)->p());
 		genConstz.push_back(genJet.getGenConstituent(g)->vz());	
 		ChgEnergy=ChgEnergy+genJet.getGenConstituent(g)->energy();
+		genID.push_back(1);
 	}
 		else NeuEnergy=NeuEnergy+genJet.getGenConstituent(g)->energy();
         	}
@@ -722,9 +757,10 @@ if(GenJetsAK4Handle.isValid()){
   }
 //fill chg particle fastjets
 JetOutputs_.clear();
-fjConstituents_.clear();
 JetVz_.clear();
-FillFastJets(genConstpt, genConsteta, genConstphi, genConstp, genConstz, CONESize, JetOutputs_, fjConstituents_, JetVz_);
+JetNtracks_.clear();
+JetEventID_.clear();
+FillFastJets(genConstpt, genConsteta, genConstphi, genConstp, genConstz, genID, CONESize, JetOutputs_, JetNtracks_, JetVz_,JetEventID_);
 for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
   m_genak4chgjet_phi->push_back(JetOutputs_[ijet].phi_std());
   m_genak4chgjet_eta->push_back(JetOutputs_[ijet].eta());
@@ -776,15 +812,19 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
         int nPS=0;
         for (unsigned int istub=0; istub<(unsigned int)theStubs.size(); istub++) {
           bool isPS = false;
-       DetId detId( theStubs.at(istub)->getDetId() );
-       if (detId.det() == DetId::Detector::Tracker) {
-         if (detId.subdetId() == StripSubdetector::TOB && tTopo->tobLayer(detId) <= 3)  isPS = true;
-         else if (detId.subdetId() == StripSubdetector::TID && tTopo->tidRing(detId) <= 9)  isPS = true;
-       }
+	  DetId detIdStub = theTrackerGeom->idToDet( ( theStubs.at(istub)->getClusterRef(0))->getDetId() )->geographicalId();	
+	        const GeomDetUnit* det0 = theTrackerGeom->idToDetUnit( detIdStub );
+      const PixelGeomDetUnit* theGeomDet = dynamic_cast< const PixelGeomDetUnit* >( det0 );
+      const PixelTopology* topol = dynamic_cast< const PixelTopology* >( &(theGeomDet->specificTopology()) );
+	if (topol->nrows() == 960) isPS=true;	
+       //DetId detId( theStubs.at(istub)->getDetId() );
+      // if (detId.det() == DetId::Detector::Tracker) {
+       //  if (detId.subdetId() == StripSubdetector::TOB && tTopo->tobLayer(detId) <= 3)  isPS = true;
+        // else if (detId.subdetId() == StripSubdetector::TID && tTopo->tidRing(detId) <= 9)  isPS = true;
+      // }
        if (isPS) nPS ++;
         }
-
-        std::cout<<"nPS hits "<<nPS<<std::endl;
+      //std::cout<<"n PS hits "<<nPS<<std::endl;
       int tmp_trk_genuine = 0;
       int tmp_trk_loose = 0;
       int tmp_trk_unknown = 0;
@@ -801,8 +841,12 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
 	if (tmp_trk_unknown) cout << " (is unknown)" << endl; 
 	if (tmp_trk_combinatoric) cout << " (is combinatoric)" << endl; 
       }
-      if(tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) 
-	&& tmp_trk_nstub>=TP_minNStub ){
+      if(nPS>=NPS_minStubs && tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) ){ 
+      //if(tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) ){ 
+      //if(nPS>=NPS_minStubs && tmp_trk_pt>TP_minPt && fabs(m_pv_MC->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) ){ 
+     ///if(tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) 
+//	&& tmp_trk_nstub>=TP_minNStub ){
+      if(tmp_trk_pt>200)tmp_trk_pt=200;
       m_trk_p ->push_back(tmp_trk_p); 
       m_trk_pt ->push_back(tmp_trk_pt);
       m_trk_eta->push_back(tmp_trk_eta);
@@ -1107,7 +1151,10 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       tmp_matchtrk_nstub  = (int) matchedTracks.at(i_track)->getStubRefs().size();
     }
 
-    if( fabs(tmp_tp_eta)<TP_maxEta && fabs(m_pv_L1TP->at(0)-tmp_tp_z0)<DeltaZ0Cut && nStubLayerTP>=TP_minNStubLayer && tmp_tp_pt>TP_minPt){
+    //if( nMatch>0 &&  fabs(tmp_tp_eta)<TP_maxEta && fabs(m_pv_L1TP->at(0)-tmp_tp_z0)<DeltaZ0Cut && nStubLayerTP>=TP_minNStubLayer && tmp_tp_pt>TP_minPt&& abs(tmp_tp_pdgid)!=11){
+    //if( fabs(tmp_tp_eta)<TP_maxEta && fabs(m_pv_L1TP->at(0)-tmp_tp_z0)<DeltaZ0Cut && nStubLayerTP>=TP_minNStubLayer && tmp_tp_pt>TP_minPt&& abs(tmp_tp_pdgid)!=11){
+   if( tmp_tp_dxy<1.0 && fabs(tmp_tp_eta)<TP_maxEta && fabs(m_pv_L1TP->at(0)-tmp_tp_z0)<DeltaZ0Cut && nStubLayerTP>=TP_minNStubLayer && tmp_tp_pt>TP_minPt){
+   //if(fabs(tmp_tp_eta)<TP_maxEta && fabs(m_pv_L1TP->at(0)-tmp_tp_z0)<DeltaZ0Cut && nStubLayerTP>=TP_minNStubLayer && tmp_tp_pt>TP_minPt){
     m_tp_p->push_back(tmp_tp_p);
     m_tp_pt->push_back(tmp_tp_pt);
     m_tp_eta->push_back(tmp_tp_eta);
@@ -1122,6 +1169,7 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
     m_tp_nstub->push_back(nStubTP);
     m_tp_nstublayers->push_back(nStubLayerTP);
     m_tp_eventid->push_back(tmp_eventid);
+    //std::cout<<"Event Id "<<tmp_eventid<<" tp pT "<<tmp_tp_pt<<std::endl;
     m_tp_charge->push_back(tmp_tp_charge);
 
     m_matchtrk_p ->push_back(tmp_matchtrk_p);
@@ -1137,7 +1185,9 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
 JetOutputs_.clear();
 fjConstituents_.clear();
 JetVz_.clear();
-FillFastJets(*m_tp_pt, *m_tp_eta, *m_tp_phi, *m_tp_p, *m_tp_z0, CONESize, JetOutputs_, fjConstituents_, JetVz_);
+JetNtracks_.clear();
+JetEventID_.clear();
+FillFastJets(*m_tp_pt, *m_tp_eta, *m_tp_phi, *m_tp_p, *m_tp_z0, *m_tp_eventid, CONESize, JetOutputs_, JetNtracks_, JetVz_,JetEventID_);
 for(unsigned int j=0; j<JetOutputs_.size(); ++j){
 	TLorentzVector temp;
 	temp.SetPtEtaPhiE(JetOutputs_[j].pt(),JetOutputs_[j].eta(),JetOutputs_[j].phi_std(),JetOutputs_[j].modp());
@@ -1146,53 +1196,37 @@ for(unsigned int j=0; j<JetOutputs_.size(); ++j){
         m_tpjet_eta->push_back(temp.Eta());
         m_tpjet_phi->push_back(temp.Phi());
         m_tpjet_vz->push_back(JetVz_[j]);
-	m_tpjet_ntracks->push_back(fjConstituents_.size());
-	float sumpt=0;
-	float truesumpt=0;
-	for(unsigned int i=0; i<fjConstituents_.size(); ++i){
-        	auto index =fjConstituents_[i].user_index();	
-		int eventId=m_tp_eventid->at(index);
-		if(eventId<=0)truesumpt=truesumpt+m_tp_pt->at(index);
-		sumpt=sumpt+m_tp_pt->at(index);
-	}
-	m_tpjet_tp_sumpt->push_back(sumpt);
-	m_tpjet_truetp_sumpt->push_back(truesumpt);
+	m_tpjet_ntracks->push_back(JetNtracks_[j]);
+	m_tpjet_truetp_sumpt->push_back(JetEventID_[j]);		
+	//std::cout<<" Jet pT "<<temp.Pt()<<" Sum pT "<<JetEventID_[j]<<std::endl;
 }
 JetOutputs_.clear();
 fjConstituents_.clear();
 JetVz_.clear();
-
-FillFastJets(*m_trk_pt, *m_trk_eta, *m_trk_phi, *m_trk_p, *m_trk_z0, CONESize, JetOutputs_, fjConstituents_, JetVz_);
+JetNtracks_.clear();
+JetEventID_.clear();
+FillFastJets(*m_trk_pt, *m_trk_eta, *m_trk_phi, *m_trk_p, *m_trk_z0, *m_trk_genuine, CONESize, JetOutputs_, JetNtracks_, JetVz_,JetEventID_);
 for(unsigned int j=0; j<JetOutputs_.size(); ++j){
         TLorentzVector temp;
         temp.SetPtEtaPhiE(JetOutputs_[j].pt(),JetOutputs_[j].eta(),JetOutputs_[j].phi_std(),JetOutputs_[j].modp());
 	m_recojet_vz->push_back(JetVz_[j]);
-	m_recojet_ntracks->push_back(fjConstituents_.size());
+	m_recojet_ntracks->push_back(JetNtracks_[j]);
   	m_recojet_phi->push_back(JetOutputs_[j].phi_std());
   	m_recojet_eta->push_back(JetOutputs_[j].eta());
   	m_recojet_pt->push_back(JetOutputs_[j].pt());
   	m_recojet_p->push_back(JetOutputs_[j].modp());
-        float sumpt=0;
-        float truesumpt=0;
-	for(unsigned int i=0; i<fjConstituents_.size(); ++i){
-        	auto index =fjConstituents_[i].user_index();	
-		int eventId=m_trk_genuine->at(index);
-		if(eventId>0)truesumpt=truesumpt+m_trk_pt->at(index);
-		sumpt=sumpt+m_trk_pt->at(index);
-	}
-	m_recojet_tp_sumpt->push_back(sumpt);
-	m_recojet_truetp_sumpt->push_back(truesumpt);
+	m_recojet_truetp_sumpt->push_back(JetEventID_[j]);
 }
 JetOutputs_.clear();
 fjConstituents_.clear();
 JetVz_.clear();
-
+FillCaloJets(CentralJetHandle);
 //FillFastJets(*m_matchtrk_pt, *m_matchtrk_eta, *m_matchtrk_phi, *m_matchtrk_p, *m_matchtrk_z0, CONESize, JetOutputs_, fjConstituents_, JetVz_);
 eventTree->Fill();
 
 } // end of analyze()
 
-void L1TrackJetFastProducer::FillFastJets(std::vector<float>pt, std::vector<float>eta, std::vector<float>phi, std::vector<float>p, std::vector<float>z0, float conesize, std::vector<fastjet::PseudoJet> &JetOutputs_, std::vector<fastjet::PseudoJet> &fjConstituents, std::vector<float>&JetVz){
+void L1TrackJetFastProducer::FillFastJets(std::vector<float>pt, std::vector<float>eta, std::vector<float>phi, std::vector<float>p, std::vector<float>z0, std::vector<int> TruthID, float conesize, std::vector<fastjet::PseudoJet> &JetOutputs_, std::vector<int>&JetNtracks, std::vector<float>&JetVz, std::vector<float>&TrueSumPt){
 fastjet::JetDefinition jet_def(fastjet::antikt_algorithm, conesize);
       JetInputs_.clear();
 	for(unsigned int j=0; j<pt.size(); ++j){
@@ -1205,19 +1239,58 @@ fastjet::JetDefinition jet_def(fastjet::antikt_algorithm, conesize);
 	fastjet::ClusterSequence cs(JetInputs_,jet_def);
 	JetOutputs_.clear();
 	JetOutputs_=fastjet::sorted_by_pt(cs.inclusive_jets(0));
+	fjConstituents_.clear();
 	for(unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
-		std::vector<fastjet::PseudoJet> fjConstituents =fastjet::sorted_by_pt(cs.constituents(JetOutputs_[ijet]));		
+		fjConstituents_ =fastjet::sorted_by_pt(cs.constituents(JetOutputs_[ijet]));		
 		float sumpt=0;
+		float truesumpt=0;
 		float avgZ=0;
-		for(unsigned int i=0; i<fjConstituents.size(); ++i){
-		    auto index =fjConstituents[i].user_index();
+		JetNtracks.push_back(fjConstituents_.size());
+		for(unsigned int i=0; i<fjConstituents_.size(); ++i){
+		    auto index =fjConstituents_[i].user_index();
 		    sumpt=sumpt+pt[index];
 		    avgZ=avgZ+z0[index]*pt[index];
-		    	
+		    if(TruthID[index]<=0)truesumpt=truesumpt+pt[index];
 		}
 		avgZ=avgZ/sumpt;
 		JetVz.push_back(avgZ);
+		TrueSumPt.push_back(truesumpt);	
 	}
+}
+void L1TrackJetFastProducer::FillCaloJets(edm::Handle< l1t::JetBxCollection> CentralJetHandle){
+  std::vector<l1t::Jet>::const_iterator jetIter;
+  m_calojet_eta->clear();
+  m_calojet_pt->clear();
+  m_calojet_phi->clear();
+  m_calojet_p->clear();
+  m_calojet_vz->clear();
+ for (jetIter = CentralJetHandle->begin(0);  jetIter != CentralJetHandle->end(0); ++jetIter) {
+      float tmp_jet_eta = jetIter->eta();
+      float tmp_jet_phi = jetIter->phi();
+      float tmp_jet_pt  = jetIter->pt();
+      bool TrackMatch=false;
+      float sumpt=0;
+      float zsumpt=0;
+      for(unsigned int t=0; t<m_trk_p->size(); ++t){
+                float deta=(tmp_jet_eta-m_trk_eta->at(t));
+                float dphi=(tmp_jet_phi-m_trk_phi->at(t));
+                float dR=sqrt((deta*deta)+(dphi*dphi));
+                if(dR<0.4){
+                        TrackMatch=true;
+			sumpt=sumpt+m_trk_pt->at(t);
+			zsumpt=zsumpt+m_trk_pt->at(t)*m_trk_z0->at(t);
+                        //break;
+                        //std::cout<<"Calo Jet Match "<<std::endl;
+                        }
+       }
+           if(TrackMatch){
+        	       m_calojet_vz->push_back(zsumpt/sumpt );
+                       m_calojet_p->push_back(jetIter->p());
+                       m_calojet_phi->push_back(tmp_jet_phi);
+                       m_calojet_eta->push_back(tmp_jet_eta);
+                       m_calojet_pt->push_back(tmp_jet_pt);
+                       }
+		}
 }
 ///////////////////////////
 // DEFINE THIS AS A PLUG-IN
