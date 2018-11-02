@@ -36,7 +36,7 @@ process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
 #D13 (tilted barrel)
 Source_Files = cms.untracked.vstring(
-    "file:Tracklets_%s.root" %sys.argv[2]
+    "file:/mnt/hadoop/store/user/rish/TTBarPU200/Tracklets_%s.root" %sys.argv[2]
     #"file:/fdata/hepx/store/user/rish/CMSSW_9_2_0/src/L1Trigger/TrackFindingTracklet/test/TTBarPU200/reprocess_L1T_L1TTTTracklet_step2_TT_PhaseIISpring17D-PU200_pilot_100.root"
 )
 process.source = cms.Source("PoolSource", fileNames = Source_Files)

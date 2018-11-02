@@ -10,10 +10,10 @@ L1TechPropPrimaryVertexProducer = cms.EDProducer('L1TechPropPrimaryVertexProduce
      L1TrackInputTag = cms.InputTag("TTTracksFromTracklet", "Level1TTTracks","L1Tracklet"),
      MCTruthStubInputTag = cms.InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted","L1Tracklet"),
      ZMAX = cms.double ( 15. ) ,        # in cm
-     CHI2MAX = cms.double( 5. ),
+     CHI2MAX = cms.double( 999. ),
      PTMINTRA = cms.double( 2.),        # PTMIN of L1Tracks, in GeV
-     nStubsmin = cms.int32( 5 ) ,       # minimum number of stubs
-     nStubsPSmin = cms.int32( -1 ),       # minimum number of stubs in PS modules 
+     nStubsmin = cms.int32( 4 ) ,       # minimum number of stubs
+     nStubsPSmin = cms.int32( 2 ),       # minimum number of stubs in PS modules 
      #nBinning = cms.int32( 301 ),        # number of bins for the temp histo (from -30 cm to + 30 cm) THis is replaced by DeltaZ
      PTMAX = cms.double( 200. ),          # in GeV. When PTMAX > 0, tracks with PT above PTMAX are considered as
 					 # mismeasured and are treated according to HighPtTracks below.
@@ -23,7 +23,7 @@ L1TechPropPrimaryVertexProducer = cms.EDProducer('L1TechPropPrimaryVertexProduce
 					 # when = 1 : saturation. Tracks with PT above PTMAX are set to PT=PTMAX.
      MonteCarloVertex = cms.bool( False ),    #  when True: dont run the vxt finding algo but pick up the MC generated vtx
      doPtComp = cms.bool( False ),       # track-stubs PT compatibility cut
-     doTightChi2 = cms.bool( True ),    # chi2dof < 5 for tracks with PT > 10
+     doTightChi2 = cms.bool( False ),    # chi2dof < 5 for tracks with PT > 10
      WEIGHT = cms.int32(1),            # WEIGHT can be set to 0, 1 or 2 for unweighted, pT weighted
                                       # or pT2 weighted tracks respectively.
 

@@ -108,7 +108,6 @@ public:
   virtual void analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup);
  // virtual void FillJets(std::vector<fastjet::PseudoJet>  JetInputs_, bool Prompt, bool TrueTP, edm::Handle< std::vector< TrackingParticle > > TrackingParticleHandle);  
   virtual void FillFastJets(std::vector<float>pt, std::vector<float>eta, std::vector<float>phi, std::vector<float>p, std::vector<float>z0, std::vector<int> TruthID, float conesize, std::vector<fastjet::PseudoJet> &JetOutputs_, std::vector<int>&JetNtracks, std::vector<float>&JetVz, std::vector<float>&TrueSumPt);
-  virtual void FillCaloJets(edm::Handle< l1t::JetBxCollection> CentralJetHandle);
 protected:
   
 private:
@@ -143,9 +142,7 @@ private:
   edm::InputTag RecoVertexInputTag;
   edm::InputTag  GenParticleInputTag;
   edm::InputTag GenJetAK4;
-  edm::InputTag CaloJetInputTag;
 
-  edm::EDGetTokenT< l1t::JetBxCollection >L1CaloJetsToken_;
   edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > ttStubMCTruthToken_;
 
   edm::EDGetTokenT< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > > ttTrackToken_;
@@ -176,7 +173,13 @@ private:
   std::vector<float>* m_pv_L1recosumpt;
   std::vector<float>* m_pv_L1reco;
   std::vector<float>* m_pv_L1TP;
-  std::vector<float>* m_pv_L1TPsumpt;
+  std::vector<float>* m_pv_L1TPsumpt; 
+
+  std::vector<float>*m_pv_L1TPPUNtracks;
+  std::vector<float>*m_pv_L1TPPU;
+  std::vector<float>* m_pv_L1TPPUsumpt; 
+  
+
   std::vector<float>* m_pv_MC;
   std::vector<float>* m_pv_MCChgSumpT;
   std::vector<int>* m_MC_lep;
@@ -202,8 +205,23 @@ private:
   std::vector<float>* m_trk_matchtp_phi;
   std::vector<float>* m_trk_matchtp_z0;
   std::vector<float>* m_trk_matchtp_dxy;
+  //PU Tracking Particles
+  std::vector<float>* m_tppileup_p;
+  std::vector<float>* m_tppileup_pt;
+  std::vector<float>* m_tppileup_eta;
+  std::vector<float>* m_tppileup_phi;
+  std::vector<float>* m_tppileup_dxy;
+  std::vector<float>* m_tppileup_d0;
+  std::vector<float>* m_tppileup_z0;
+  std::vector<float>* m_tppileup_d0_prod;
+  std::vector<float>* m_tppileup_z0_prod;
+  std::vector<int>*   m_tppileup_nmatch;
+  std::vector<int>*   m_tppileup_nstub;
+  std::vector<int>*   m_tppileup_nstublayers;
+  std::vector<int>*   m_tppileup_eventid;
+  std::vector<int>*   m_tppileup_charge;
 
-  // all tracking particles
+  // Prompt tracking particles
   std::vector<float>* m_tp_p;
   std::vector<float>* m_tp_pt;
   std::vector<float>* m_tp_eta;
@@ -229,29 +247,6 @@ private:
   std::vector<float>* m_matchtrk_chi2; 
   std::vector<int>*   m_matchtrk_nstub;
 
-  // ALL stubs
-  std::vector<float>* m_genak4jet_phi;
-  std::vector<float>* m_genak4jet_neufrac;
-  std::vector<float>* m_genak4jet_chgfrac;
-  std::vector<float>* m_genak4jet_metfrac;
-  std::vector<float>* m_genak4jet_eta;
-  std::vector<float>* m_genak4jet_pt;
-  std::vector<float>* m_genak4jet_p;
-  std::vector<float>* m_genak4chgjet_phi;
-  std::vector<float>* m_genak4chgjet_eta;
-  std::vector<float>* m_genak4chgjet_pt;
-  std::vector<float>* m_genak4chgjet_p;
-  std::vector<float>* m_genak4chgjet_z;
-
-  std::vector<float>* m_recojet_vz;
-  std::vector<float>* m_recojet_p;
-  std::vector<float>* m_recojet_phi;
-  std::vector<float>* m_recojet_eta;
-  std::vector<int>* m_recojet_ntracks;
-  std::vector<float>* m_recojet_tp_sumpt;
-  std::vector<float>* m_recojet_truetp_sumpt;
-  std::vector<float>* m_recojet_pt;
-
   std::vector<float>* m_tpjet_vz;
   std::vector<float>* m_tpjet_p;
   std::vector<float>* m_tpjet_phi;
@@ -261,11 +256,6 @@ private:
   std::vector<float>* m_tpjet_truetp_sumpt;
   std::vector<float>* m_tpjet_pt;
 
-  std::vector<float>* m_calojet_vz;
-  std::vector<float>* m_calojet_p;
-  std::vector<float>* m_calojet_phi;
-  std::vector<float>* m_calojet_eta;
-  std::vector<float>* m_calojet_pt;
 };
 
 
@@ -304,7 +294,6 @@ L1TrackJetFastProducer::L1TrackJetFastProducer(edm::ParameterSet const& iConfig)
   MCTruthStubInputTag = iConfig.getParameter<edm::InputTag>("MCTruthStubInputTag");
   TrackingParticleInputTag = iConfig.getParameter<edm::InputTag>("TrackingParticleInputTag");
   GenJetAK4=iConfig.getParameter<edm::InputTag>("GenJetAK4");
-  CaloJetInputTag = iConfig.getParameter<edm::InputTag>("CaloJetInputTag");
 
   HEPMCVertexToken_=consumes< std::vector< reco::GenParticle> >(GenParticleInputTag);
   ttTrackToken_ = consumes< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > >(L1TrackInputTag);
@@ -315,7 +304,6 @@ L1TrackJetFastProducer::L1TrackJetFastProducer(edm::ParameterSet const& iConfig)
   MCVertexToken_=consumes<L1TkPrimaryVertexCollection>(MCVertexInputTag);
   TPVertexToken_=consumes<L1TkPrimaryVertexCollection>(TrueVertexInputTag);
   L1VertexToken_=consumes<l1t::VertexCollection>(RecoVertexInputTag);
-  L1CaloJetsToken_=consumes<l1t::JetBxCollection>(CaloJetInputTag);
 }
 
 /////////////
@@ -367,6 +355,20 @@ void L1TrackJetFastProducer::beginJob()
   m_trk_matchtp_phi = new std::vector<float>;
   m_trk_matchtp_z0 = new std::vector<float>;
   m_trk_matchtp_dxy = new std::vector<float>;
+  m_tppileup_p     = new std::vector<float>;
+  m_tppileup_pt     = new std::vector<float>;
+  m_tppileup_eta    = new std::vector<float>;
+  m_tppileup_phi    = new std::vector<float>;
+  m_tppileup_dxy    = new std::vector<float>;
+  m_tppileup_d0     = new std::vector<float>;
+  m_tppileup_z0     = new std::vector<float>;
+  m_tppileup_d0_prod = new std::vector<float>;
+  m_tppileup_z0_prod = new std::vector<float>;
+  m_tppileup_nmatch = new std::vector<int>;
+  m_tppileup_nstub  = new std::vector<int>;
+  m_tppileup_nstublayers  = new std::vector<int>;
+  m_tppileup_eventid = new std::vector<int>;
+  m_tppileup_charge = new std::vector<int>;
 
   m_tp_p     = new std::vector<float>;
   m_tp_pt     = new std::vector<float>;
@@ -401,35 +403,9 @@ void L1TrackJetFastProducer::beginJob()
   m_pv_MC = new std::vector<float>;
   m_pv_MCChgSumpT = new std::vector<float>;
   m_MC_lep=new std::vector<int>;  
-  m_genak4jet_phi = new std::vector<float>;
-  m_genak4jet_neufrac = new std::vector<float>;
-  m_genak4jet_chgfrac = new std::vector<float>;
-  m_genak4jet_metfrac = new std::vector<float>;
-  m_genak4jet_eta = new std::vector<float>;
-  m_genak4jet_pt = new std::vector<float>;
-  m_genak4jet_p = new std::vector<float>;
-
-  m_genak4chgjet_phi = new std::vector<float>;
-  m_genak4chgjet_eta = new std::vector<float>;
-  m_genak4chgjet_pt = new std::vector<float>;
-  m_genak4chgjet_p = new std::vector<float>;
-  m_genak4chgjet_z = new std::vector<float>;
-
-  m_recojet_eta = new std::vector<float>;
-  m_recojet_vz = new std::vector<float>;
-  m_recojet_phi = new std::vector<float>;
-  m_recojet_p = new std::vector<float>;
-  m_recojet_pt = new std::vector<float>;
-  m_recojet_ntracks = new std::vector<int>;
-  m_recojet_tp_sumpt = new std::vector<float>;
-  m_recojet_truetp_sumpt = new std::vector<float>;
-
-  m_calojet_eta = new std::vector<float>;
-  m_calojet_phi = new std::vector<float>;
-  m_calojet_vz = new std::vector<float>;
-  m_calojet_p = new std::vector<float>;
-  m_calojet_pt = new std::vector<float>;
-
+  m_pv_L1TPPUNtracks=new std::vector<float>;
+  m_pv_L1TPPU=new std::vector<float>;
+  m_pv_L1TPPUsumpt=new std::vector<float>;
   m_tpjet_eta = new std::vector<float>;
   m_tpjet_vz = new std::vector<float>;
   m_tpjet_phi = new std::vector<float>;
@@ -480,6 +456,20 @@ void L1TrackJetFastProducer::beginJob()
   eventTree->Branch("tp_eventid",&m_tp_eventid);
   eventTree->Branch("tp_charge",&m_tp_charge);
 
+  eventTree->Branch("tppileup_p",     &m_tppileup_p);
+  eventTree->Branch("tppileup_pt",     &m_tppileup_pt);
+  eventTree->Branch("tppileup_eta",    &m_tppileup_eta);
+  eventTree->Branch("tppileup_phi",    &m_tppileup_phi);
+  eventTree->Branch("tppileup_dxy",    &m_tppileup_dxy);
+  eventTree->Branch("tppileup_d0",     &m_tppileup_d0);
+  eventTree->Branch("tppileup_z0",     &m_tppileup_z0);
+  eventTree->Branch("tppileup_d0_prod",&m_tppileup_d0_prod);
+  eventTree->Branch("tppileup_z0_prod",&m_tppileup_z0_prod);
+  eventTree->Branch("tppileup_nmatch", &m_tppileup_nmatch);
+  eventTree->Branch("tppileup_nstub", &m_tppileup_nstub);
+  eventTree->Branch("tppileup_nstublayers", &m_tppileup_nstublayers);
+  eventTree->Branch("tppileup_eventid",&m_tppileup_eventid);
+  eventTree->Branch("tppileup_charge",&m_tppileup_charge);
   eventTree->Branch("matchtrk_p",      &m_matchtrk_p);
   eventTree->Branch("matchtrk_pt",      &m_matchtrk_pt);
   eventTree->Branch("matchtrk_eta",     &m_matchtrk_eta);
@@ -499,6 +489,9 @@ void L1TrackJetFastProducer::beginJob()
     eventTree->Branch("MC_lep", &m_MC_lep);
     eventTree->Branch("pv_MCChgSumpT", &m_pv_MCChgSumpT);
     eventTree->Branch("pv_MC", &m_pv_MC);
+    eventTree->Branch("pv_L1TPPUNtracks", &m_pv_L1TPPUNtracks);
+    eventTree->Branch("pv_L1TPPU", &m_pv_L1TPPU);
+    eventTree->Branch("pv_L1TPPUsumpt",&m_pv_L1TPPUsumpt);
     eventTree->Branch("tpjet_eta", &m_tpjet_eta);
     eventTree->Branch("tpjet_vz", &m_tpjet_vz);
     eventTree->Branch("tpjet_p", &m_tpjet_p);
@@ -507,30 +500,8 @@ void L1TrackJetFastProducer::beginJob()
     eventTree->Branch("tpjet_ntracks", &m_tpjet_ntracks);
     eventTree->Branch("tpjet_tp_sumpt", &m_tpjet_tp_sumpt);
     eventTree->Branch("tpjet_truetp_sumpt", &m_tpjet_truetp_sumpt);
-    eventTree->Branch("calojet_eta", &m_calojet_eta);
-    eventTree->Branch("calojet_vz", &m_calojet_p);
-    eventTree->Branch("calojet_p", &m_calojet_p);
-    eventTree->Branch("calojet_pt", &m_calojet_pt);
-    eventTree->Branch("calojet_phi", &m_calojet_phi);
-    eventTree->Branch("recojet_eta", &m_recojet_eta);
-    eventTree->Branch("recojet_vz", &m_recojet_vz);
-    eventTree->Branch("recojet_p", &m_recojet_p);
-    eventTree->Branch("recojet_pt", &m_recojet_pt);
-    eventTree->Branch("recojet_phi", &m_recojet_phi);
-    eventTree->Branch("recojet_ntracks", &m_recojet_ntracks);
-    eventTree->Branch("recojet_truetp_sumpt", m_recojet_truetp_sumpt);
-    eventTree->Branch("genjetak4_neufrac", &m_genak4jet_neufrac);
-    eventTree->Branch("genjetak4_chgfrac", &m_genak4jet_chgfrac);
-    eventTree->Branch("genjetak4_metfrac", &m_genak4jet_metfrac);
-    eventTree->Branch("genjetak4_eta", &m_genak4jet_eta);
-    eventTree->Branch("genjetak4_phi", &m_genak4jet_phi);
-    eventTree->Branch("genjetak4_p", &m_genak4jet_p);
-    eventTree->Branch("genjetak4_pt", &m_genak4jet_pt);
-    eventTree->Branch("genjetchgak4_eta", &m_genak4chgjet_eta);
-    eventTree->Branch("genjetchgak4_phi", &m_genak4chgjet_phi);
-    eventTree->Branch("genjetchgak4_p", &m_genak4chgjet_p);
-    eventTree->Branch("genjetchgak4_z", &m_genak4chgjet_z);
-    eventTree->Branch("genjetchgak4_pt", &m_genak4chgjet_pt);
+
+
 }
 
 
@@ -567,6 +538,20 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
     m_trk_matchtp_z0->clear();
     m_trk_matchtp_dxy->clear();
   }
+  m_tppileup_p->clear();
+  m_tppileup_pt->clear();
+  m_tppileup_eta->clear();
+  m_tppileup_phi->clear();
+  m_tppileup_dxy->clear();
+  m_tppileup_d0->clear();
+  m_tppileup_z0->clear();
+  m_tppileup_d0_prod->clear();
+  m_tppileup_z0_prod->clear();
+  m_tppileup_nmatch->clear();
+  m_tppileup_nstub->clear();
+  m_tppileup_nstublayers->clear();
+  m_tppileup_eventid->clear();
+  m_tppileup_charge->clear();
   
   m_tp_p->clear();
   m_tp_pt->clear();
@@ -593,27 +578,6 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
   m_matchtrk_chi2->clear();
   m_matchtrk_nstub->clear();
 
-  m_genak4chgjet_phi->clear();
-  m_genak4chgjet_eta->clear() ;
-  m_genak4chgjet_pt->clear() ;
-  m_genak4chgjet_p->clear() ;
-  m_genak4chgjet_z->clear() ;
-  m_genak4jet_phi->clear();
-  m_genak4jet_neufrac->clear() ;
-  m_genak4jet_chgfrac->clear() ;
-  m_genak4jet_metfrac->clear() ;
-  m_genak4jet_eta->clear() ;
-  m_genak4jet_pt->clear() ;
-  m_genak4jet_p->clear() ;
-
-  m_recojet_eta->clear();
-  m_recojet_pt->clear();
-  m_recojet_vz->clear();
-  m_recojet_phi->clear();
-  m_recojet_p->clear();
-  m_recojet_ntracks->clear();
-  m_recojet_truetp_sumpt->clear();
-  m_recojet_tp_sumpt->clear();
   m_tpjet_eta->clear();
   m_tpjet_pt->clear();
   m_tpjet_vz->clear();
@@ -631,7 +595,11 @@ void L1TrackJetFastProducer::analyze(const edm::Event& iEvent, const edm::EventS
   m_pv_MC->clear();
   m_MC_lep->clear();
   m_pv_MCChgSumpT->clear();
-  // -----------------------------------------------------------------------------------------------
+  m_pv_L1TPPUNtracks->clear();
+  m_pv_L1TPPU->clear();
+  m_pv_L1TPPUsumpt->clear();
+   
+// -----------------------------------------------------------------------------------------------
   // retrieve various containers
   // -----------------------------------------------------------------------------------------------
 
@@ -661,8 +629,6 @@ if(GenParticleHandle.isValid()){
   edm::Handle< TTTrackAssociationMap< Ref_Phase2TrackerDigi_ > > MCTruthTTTrackHandle;
   iEvent.getByToken(ttTrackMCTruthToken_, MCTruthTTTrackHandle);
 
-  edm::Handle< l1t::JetBxCollection> CentralJetHandle;
-  iEvent.getByToken(L1CaloJetsToken_,CentralJetHandle); //for Central bunch crossing this will be zero CentralJetHandle->at(0);
 
   // tracking particles
   edm::Handle< std::vector< TrackingParticle > > TrackingParticleHandle;
@@ -719,56 +685,11 @@ if(GenParticleHandle.isValid()){
 
   const TrackerTopology* const tTopo = tTopoHandle.product();
   const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
-//Gen Jet branches
-std::vector<float>genConstpt;
-std::vector<float>genConsteta;
-std::vector<float>genConstphi;
-std::vector<float>genConstp;
-std::vector<float>genConstz;
-std::vector<int>genID;
-if(GenJetsAK4Handle.isValid()){
-        for (unsigned iGenJet = 0; iGenJet < GenJetsAK4Handle->size(); ++iGenJet) {
-
-         const reco::GenJet& genJet = (*GenJetsAK4Handle) [iGenJet];
-   if(fabs(genJet.eta())<TP_maxEta){
-          m_genak4jet_p->push_back(genJet.energy());
-          m_genak4jet_pt->push_back(genJet.pt());
-	  m_genak4jet_metfrac->push_back(genJet.invisibleEnergy()/genJet.energy());
-          m_genak4jet_eta->push_back(genJet.eta());
-          m_genak4jet_phi->push_back(genJet.phi());
-	float NeuEnergy=0;
-	float ChgEnergy=0;
-
-	for(unsigned g=0; g<genJet.getGenConstituents().size(); ++g){
-		if(genJet.getGenConstituent(g)->charge()!=0 && genJet.getGenConstituent(g)->pt()>2){
-		genConstpt.push_back(genJet.getGenConstituent(g)->pt());
-		genConsteta.push_back(genJet.getGenConstituent(g)->eta());
-		genConstphi.push_back(genJet.getGenConstituent(g)->phi());
-		genConstp.push_back(genJet.getGenConstituent(g)->p());
-		genConstz.push_back(genJet.getGenConstituent(g)->vz());	
-		ChgEnergy=ChgEnergy+genJet.getGenConstituent(g)->energy();
-		genID.push_back(1);
-	}
-		else NeuEnergy=NeuEnergy+genJet.getGenConstituent(g)->energy();
-        	}
-		m_genak4jet_chgfrac->push_back(ChgEnergy);
-	        m_genak4jet_neufrac->push_back(NeuEnergy);
-    }
-  }
 //fill chg particle fastjets
 JetOutputs_.clear();
 JetVz_.clear();
 JetNtracks_.clear();
 JetEventID_.clear();
-FillFastJets(genConstpt, genConsteta, genConstphi, genConstp, genConstz, genID, CONESize, JetOutputs_, JetNtracks_, JetVz_,JetEventID_);
-for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
-  m_genak4chgjet_phi->push_back(JetOutputs_[ijet].phi_std());
-  m_genak4chgjet_eta->push_back(JetOutputs_[ijet].eta());
-  m_genak4chgjet_pt->push_back(JetOutputs_[ijet].pt());
-  m_genak4chgjet_p->push_back(JetOutputs_[ijet].modp());
-  m_genak4chgjet_z->push_back(JetVz_[ijet]);
-  }
-}
   // ----------------------------------------------------------------------------------------------
   // loop over L1 tracks
   // ----------------------------------------------------------------------------------------------
@@ -797,7 +718,7 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       float tmp_trk_d0 = -999;
       if (L1Tk_nPar == 5) {
 	float tmp_trk_x0   = iterL1Track->getPOCA(L1Tk_nPar).x();
-	float tmp_trk_y0   = iterL1Track->getPOCA(L1Tk_nPar).y();	
+        float tmp_trk_y0   = iterL1Track->getPOCA(L1Tk_nPar).y();	
 	tmp_trk_d0 = -tmp_trk_x0*sin(tmp_trk_phi) + tmp_trk_y0*cos(tmp_trk_phi);
       }
 
@@ -825,12 +746,15 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
        if (isPS) nPS ++;
         }
       //std::cout<<"n PS hits "<<nPS<<std::endl;
+      edm::Ptr< TrackingParticle > my_tp = MCTruthTTTrackHandle->findTrackingParticlePtr(l1track_ptr);
+      int tmp_eventid=-1;
+      if(!my_tp.isNull()) tmp_eventid = my_tp->eventId().event();
       int tmp_trk_genuine = 0;
       int tmp_trk_loose = 0;
       int tmp_trk_unknown = 0;
       int tmp_trk_combinatoric = 0;
-      if (MCTruthTTTrackHandle->isLooselyGenuine(l1track_ptr)) tmp_trk_loose = 1;
-      if (MCTruthTTTrackHandle->isGenuine(l1track_ptr)) tmp_trk_genuine = 1;
+      if (MCTruthTTTrackHandle->isLooselyGenuine(l1track_ptr) && tmp_eventid==0) tmp_trk_loose = 1;
+      if (MCTruthTTTrackHandle->isGenuine(l1track_ptr) && tmp_eventid==0) tmp_trk_genuine = 1;
       if (MCTruthTTTrackHandle->isUnknown(l1track_ptr)) tmp_trk_unknown = 1;
       if (MCTruthTTTrackHandle->isCombinatoric(l1track_ptr)) tmp_trk_combinatoric = 1;
       
@@ -841,12 +765,12 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
 	if (tmp_trk_unknown) cout << " (is unknown)" << endl; 
 	if (tmp_trk_combinatoric) cout << " (is combinatoric)" << endl; 
       }
-      if(nPS>=NPS_minStubs && tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) ){ 
+      //if(nPS>=NPS_minStubs && tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut ){ 
+      //if(nPS>=NPS_minStubs && tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) ){ 
       //if(tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) ){ 
       //if(nPS>=NPS_minStubs && tmp_trk_pt>TP_minPt && fabs(m_pv_MC->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) ){ 
      ///if(tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) 
 //	&& tmp_trk_nstub>=TP_minNStub ){
-      if(tmp_trk_pt>200)tmp_trk_pt=200;
       m_trk_p ->push_back(tmp_trk_p); 
       m_trk_pt ->push_back(tmp_trk_pt);
       m_trk_eta->push_back(tmp_trk_eta);
@@ -861,13 +785,12 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       m_trk_loose->push_back(tmp_trk_loose);
       m_trk_unknown->push_back(tmp_trk_unknown);
       m_trk_combinatoric->push_back(tmp_trk_combinatoric);
-      }
+     // }
 
       // ----------------------------------------------------------------------------------------------
       // for studying the fake rate
       // ----------------------------------------------------------------------------------------------
 
-      edm::Ptr< TrackingParticle > my_tp = MCTruthTTTrackHandle->findTrackingParticlePtr(l1track_ptr);
 
       int myFake = 0;
 
@@ -1151,10 +1074,22 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       tmp_matchtrk_nstub  = (int) matchedTracks.at(i_track)->getStubRefs().size();
     }
 
-    //if( nMatch>0 &&  fabs(tmp_tp_eta)<TP_maxEta && fabs(m_pv_L1TP->at(0)-tmp_tp_z0)<DeltaZ0Cut && nStubLayerTP>=TP_minNStubLayer && tmp_tp_pt>TP_minPt&& abs(tmp_tp_pdgid)!=11){
-    //if( fabs(tmp_tp_eta)<TP_maxEta && fabs(m_pv_L1TP->at(0)-tmp_tp_z0)<DeltaZ0Cut && nStubLayerTP>=TP_minNStubLayer && tmp_tp_pt>TP_minPt&& abs(tmp_tp_pdgid)!=11){
-   if( tmp_tp_dxy<1.0 && fabs(tmp_tp_eta)<TP_maxEta && fabs(m_pv_L1TP->at(0)-tmp_tp_z0)<DeltaZ0Cut && nStubLayerTP>=TP_minNStubLayer && tmp_tp_pt>TP_minPt){
-   //if(fabs(tmp_tp_eta)<TP_maxEta && fabs(m_pv_L1TP->at(0)-tmp_tp_z0)<DeltaZ0Cut && nStubLayerTP>=TP_minNStubLayer && tmp_tp_pt>TP_minPt){
+   if(tmp_eventid > 0 && fabs(m_pv_L1TP->at(0)-tmp_tp_z0)>DeltaZ0Cut && fabs(tmp_tp_eta)<TP_maxEta && nStubLayerTP>=TP_minNStubLayer && tmp_tp_pt>TP_minPt){//PU Vertex exclusive from prompt 
+    m_tppileup_p->push_back(tmp_tp_p);
+    m_tppileup_pt->push_back(tmp_tp_pt);
+    m_tppileup_eta->push_back(tmp_tp_eta);
+    m_tppileup_phi->push_back(tmp_tp_phi);
+    m_tppileup_dxy->push_back(tmp_tp_dxy);
+    m_tppileup_z0->push_back(tmp_tp_z0);
+    m_tppileup_d0->push_back(tmp_tp_d0);
+    m_tppileup_z0_prod->push_back(tmp_tp_z0_prod);
+    m_tppileup_d0_prod->push_back(tmp_tp_d0_prod);
+    m_tppileup_nstub->push_back(nStubTP);
+    m_tppileup_nstublayers->push_back(nStubLayerTP);
+    m_tppileup_eventid->push_back(tmp_eventid);
+    m_tppileup_charge->push_back(tmp_tp_charge);
+   }
+   if( fabs(tmp_tp_eta)<TP_maxEta && fabs(m_pv_L1TP->at(0)-tmp_tp_z0)<DeltaZ0Cut && nStubLayerTP>=TP_minNStubLayer && tmp_tp_pt>TP_minPt){
     m_tp_p->push_back(tmp_tp_p);
     m_tp_pt->push_back(tmp_tp_pt);
     m_tp_eta->push_back(tmp_tp_eta);
@@ -1200,28 +1135,70 @@ for(unsigned int j=0; j<JetOutputs_.size(); ++j){
 	m_tpjet_truetp_sumpt->push_back(JetEventID_[j]);		
 	//std::cout<<" Jet pT "<<temp.Pt()<<" Sum pT "<<JetEventID_[j]<<std::endl;
 }
-JetOutputs_.clear();
-fjConstituents_.clear();
-JetVz_.clear();
-JetNtracks_.clear();
-JetEventID_.clear();
-FillFastJets(*m_trk_pt, *m_trk_eta, *m_trk_phi, *m_trk_p, *m_trk_z0, *m_trk_genuine, CONESize, JetOutputs_, JetNtracks_, JetVz_,JetEventID_);
-for(unsigned int j=0; j<JetOutputs_.size(); ++j){
-        TLorentzVector temp;
-        temp.SetPtEtaPhiE(JetOutputs_[j].pt(),JetOutputs_[j].eta(),JetOutputs_[j].phi_std(),JetOutputs_[j].modp());
-	m_recojet_vz->push_back(JetVz_[j]);
-	m_recojet_ntracks->push_back(JetNtracks_[j]);
-  	m_recojet_phi->push_back(JetOutputs_[j].phi_std());
-  	m_recojet_eta->push_back(JetOutputs_[j].eta());
-  	m_recojet_pt->push_back(JetOutputs_[j].pt());
-  	m_recojet_p->push_back(JetOutputs_[j].modp());
-	m_recojet_truetp_sumpt->push_back(JetEventID_[j]);
+   for(unsigned int z=0; z<30; ++z){
+    float zmax=((z+1))-15.;
+    float zmin=(z)-15.;
+	std::vector<float>z0;
+	std::vector<float>p;
+	std::vector<float>pt;
+	std::vector<float>eta;
+	std::vector<float>phi;
+	std::vector<int>id;
+	std::vector<float>PUz;
+	JetOutputs_.clear();
+	fjConstituents_.clear();
+	JetVz_.clear();
+	JetNtracks_.clear();
+	JetEventID_.clear();
+	for(unsigned int t=0; t<m_tppileup_z0->size(); ++t){
+		if(m_tppileup_z0->at(t)>zmax || m_tppileup_z0->at(t)<zmin)continue;
+		z0.push_back(m_tppileup_z0->at(t));
+		phi.push_back(m_tppileup_phi->at(t));	
+		p.push_back(m_tppileup_p->at(t));	
+		pt.push_back(m_tppileup_pt->at(t));	
+		eta.push_back(m_tppileup_eta->at(t));	
+		id.push_back(m_tppileup_eventid->at(t));
+	}
+	FillFastJets(pt, eta, phi, p, z0, id, CONESize, JetOutputs_, JetNtracks_, JetVz_,JetEventID_);
+ 	for(unsigned int j=0; j<JetOutputs_.size(); ++j){
+		//std::cout<<"Jet vz "<<JetVz_[j]<<std::endl;
+		//store unique PVz from PU
+		bool overlap=false;
+		for(unsigned int p=0; p<PUz.size();++p){
+			if(fabs(JetVz_[j]-PUz[p])<0.1)overlap=true;
+		}
+		if(!overlap){
+			PUz.push_back(JetVz_[j]);	
+		}
+	}
+	std::vector<float>PUSumpT;
+	std::vector<int>PUNtracks;
+	for(unsigned int p=0; p<PUz.size(); ++p){
+		float z=PUz[p];
+		float sumpT=0;
+		int ntracks=0;
+		for(unsigned int j=0; j<JetOutputs_.size(); ++j){
+			if(fabs(z-JetVz_[j])>0.1)continue;
+			sumpT=sumpT+JetOutputs_[j].pt();
+			ntracks=ntracks+JetNtracks_[j];
+		}
+		PUNtracks.push_back(ntracks);	
+		PUSumpT.push_back(sumpT);	
+		//std::cout<<" PVz "<<PUz<<" Ntracks "<<ntracks<<std::endl;
+	}	
+	for(unsigned int p=0; p<PUz.size(); ++p){
+	//std::cout<<"Pv Z "<<PUz[p]<<" Ntracks "<<PUNtracks[p]<<" sum pT "<<PUSumpT[p]<<std::endl;
+  	m_pv_L1TPPUNtracks->push_back(PUNtracks[p]);
+  	m_pv_L1TPPU->push_back(PUz[p]);
+ 	 m_pv_L1TPPUsumpt->push_back(PUSumpT[p]);
+
+	}	
 }
-JetOutputs_.clear();
-fjConstituents_.clear();
-JetVz_.clear();
-FillCaloJets(CentralJetHandle);
-//FillFastJets(*m_matchtrk_pt, *m_matchtrk_eta, *m_matchtrk_phi, *m_matchtrk_p, *m_matchtrk_z0, CONESize, JetOutputs_, fjConstituents_, JetVz_);
+//for(unsigned int p=0; p<PU_PVz.size();++p)std::cout<<"PU Vertices "<<PU_PVz[p]<<std::endl;
+//FillFastJets(*m_tp_pt, *m_tp_eta, *m_tp_phi, *m_tp_p, *m_tp_z0, *m_tp_eventid, CONESize, JetOutputs_, JetNtracks_, JetVz_,JetEventID_);
+
+
+
 eventTree->Fill();
 
 } // end of analyze()
@@ -1256,41 +1233,6 @@ fastjet::JetDefinition jet_def(fastjet::antikt_algorithm, conesize);
 		JetVz.push_back(avgZ);
 		TrueSumPt.push_back(truesumpt);	
 	}
-}
-void L1TrackJetFastProducer::FillCaloJets(edm::Handle< l1t::JetBxCollection> CentralJetHandle){
-  std::vector<l1t::Jet>::const_iterator jetIter;
-  m_calojet_eta->clear();
-  m_calojet_pt->clear();
-  m_calojet_phi->clear();
-  m_calojet_p->clear();
-  m_calojet_vz->clear();
- for (jetIter = CentralJetHandle->begin(0);  jetIter != CentralJetHandle->end(0); ++jetIter) {
-      float tmp_jet_eta = jetIter->eta();
-      float tmp_jet_phi = jetIter->phi();
-      float tmp_jet_pt  = jetIter->pt();
-      bool TrackMatch=false;
-      float sumpt=0;
-      float zsumpt=0;
-      for(unsigned int t=0; t<m_trk_p->size(); ++t){
-                float deta=(tmp_jet_eta-m_trk_eta->at(t));
-                float dphi=(tmp_jet_phi-m_trk_phi->at(t));
-                float dR=sqrt((deta*deta)+(dphi*dphi));
-                if(dR<0.4){
-                        TrackMatch=true;
-			sumpt=sumpt+m_trk_pt->at(t);
-			zsumpt=zsumpt+m_trk_pt->at(t)*m_trk_z0->at(t);
-                        //break;
-                        //std::cout<<"Calo Jet Match "<<std::endl;
-                        }
-       }
-           if(TrackMatch){
-        	       m_calojet_vz->push_back(zsumpt/sumpt );
-                       m_calojet_p->push_back(jetIter->p());
-                       m_calojet_phi->push_back(tmp_jet_phi);
-                       m_calojet_eta->push_back(tmp_jet_eta);
-                       m_calojet_pt->push_back(tmp_jet_pt);
-                       }
-		}
 }
 ///////////////////////////
 // DEFINE THIS AS A PLUG-IN
