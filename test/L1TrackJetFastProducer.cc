@@ -88,7 +88,7 @@
 #include "RecoJets/JetProducers/plugins/VirtualJetProducer.h"
 //////////////
 // NAMESPACES
-#include "tracklet_em_disp.h"
+//#include "tracklet_em_disp.h"
 using namespace std;
 using namespace edm;
 using namespace l1t;
@@ -115,8 +115,8 @@ typedef TTTrack< Ref_Phase2TrackerDigi_ >  L1TTTrackType;
   virtual bool TrackQualityCuts(float trk_pt,int trk_nstub, double trk_chi2);
   virtual void FillFastJets(std::vector<float>pt, std::vector<float>eta, std::vector<float>phi, std::vector<float>p, std::vector<float>z0, std::vector<int> TruthID, float conesize, std::vector<fastjet::PseudoJet> &JetOutputs_, std::vector<int>&JetNtracks, std::vector<float>&JetVz, std::vector<float>&TrueSumPt);
   virtual void FillCaloJets(Handle<reco::PFJetCollection> PFCaloJetHandle,Handle< L1TkJetParticleCollection> CaloTkJetHandle);
-  virtual etaphibin * L1_cluster(etaphibin * phislice);
-  virtual void  L2_cluster(vector< Ptr< L1TTTrackType > > L1TrackPtrs, vector<int>ttrk, vector<int>tdtrk,vector<int>ttdtrk, maxzbin &mzb);
+ // virtual etaphibin * L1_cluster(etaphibin * phislice);
+ // virtual void  L2_cluster(vector< Ptr< L1TTTrackType > > L1TrackPtrs, vector<int>ttrk, vector<int>tdtrk,vector<int>ttdtrk, maxzbin &mzb);
 protected:
   
 private:
@@ -154,12 +154,13 @@ private:
   InputTag RecoVertexInputTag;
   InputTag  GenParticleInputTag;
   InputTag GenJetAK4;
-       vector<int> zbincount;
+/* 
+      vector<int> zbincount;
        vector<int> ttrk;
        vector<int> tdtrk;
        vector<int> ttdtrk;
 vector< Ptr< L1TTTrackType > > L1TwoLayerInputPtrs;
-
+*/
   EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > ttStubMCTruthToken_;
 
   EDGetTokenT< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > > ttTrackToken_;
@@ -710,12 +711,14 @@ void L1TrackJetFastProducer::analyze(const Event& iEvent, const EventSetup& iSet
   m_MC_lep->clear();
   m_pv_MCChgSumpT->clear();
   // -----------------------------------------------------------------------------------------------
+  /*
   zbincount.clear();
   ttrk.clear();
   tdtrk.clear();
   ttdtrk.clear();
   L1TwoLayerInputPtrs.clear();
-  // retrieve various containers
+*/ 
+ // retrieve various containers
   // -----------------------------------------------------------------------------------------------
 
   // L1 tracks
@@ -918,9 +921,9 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       int tmp_trk_loose = 0;
       int tmp_trk_unknown = 0;
       int tmp_trk_combinatoric = 0;
+      int tmp_eventid=-1;
 	/*
       if (MCTruthTTTrackHandle->isLooselyGenuine(l1track_ptr)) tmp_trk_loose = 1;
-      if (MCTruthTTTrackHandle->isGenuine(l1track_ptr)) tmp_trk_genuine = 1;
       if (MCTruthTTTrackHandle->isUnknown(l1track_ptr)) tmp_trk_unknown = 1;
       if (MCTruthTTTrackHandle->isCombinatoric(l1track_ptr)) tmp_trk_combinatoric = 1;
       
@@ -932,7 +935,7 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
 	if (tmp_trk_combinatoric) cout << " (is combinatoric)" << endl; 
       }
 	*/
-      if(nPS>=NPS_minStubs && tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && TrackQualityCuts(tmp_trk_pt,tmp_trk_nstub,tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar))){
+      //if(nPS>=NPS_minStubs && tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && TrackQualityCuts(tmp_trk_pt,tmp_trk_nstub,tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar))){
 	//&& (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) ){ 
 
       //if(tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) ){ 
@@ -940,8 +943,9 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
      ///if(tmp_trk_pt>TP_minPt && fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut && (tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar)<CHI2MAX  || tmp_trk_pt<20) 
 //	&& tmp_trk_nstub>=TP_minNStub ){
       //if(tmp_trk_pt>200)tmp_trk_pt=200;
-      L1TwoLayerInputPtrs.push_back(l1track_ptr);
-      zbincount.push_back(0);
+      //L1TwoLayerInputPtrs.push_back(l1track_ptr);
+      //zbincount.push_back(0);
+/*
       float tmp_trk_zchi2        = iterL1Track->getChi2(4); //YG hack: for 5-par tracks, use 4par to store rz fit chi2
       float tmp_trk_bconsistency = iterL1Track->getStubPtConsistency(L1Tk_nPar); //YG hack: consistency
     if ((fabs(tmp_trk_d0)>0.1 && tmp_trk_nstub>=5)||(tmp_trk_nstub==4 && fabs(tmp_trk_d0)>1.0)) tdtrk.push_back(1);
@@ -951,7 +955,8 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
     else ttrk.push_back(0);
     if ( (tmp_trk_chi2/(tmp_trk_nstub-3)) <3.5 && (tmp_trk_zchi2/(tmp_trk_nstub-2))<2 && tmp_trk_nstub>=5 && tmp_trk_bconsistency<4 && ((fabs(tmp_trk_d0)>0.1) ))ttdtrk.push_back(1);
     else ttdtrk.push_back(0);
-      if(fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut){
+*/  
+    if(fabs(m_pv_L1reco->at(0)-tmp_trk_z0)<DeltaZ0Cut){
       m_trk_p ->push_back(tmp_trk_p); 
       m_trk_pt ->push_back(tmp_trk_pt);
       m_trk_eta->push_back(tmp_trk_eta);
@@ -962,12 +967,15 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       m_trk_chi2 ->push_back(tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar));
       m_trk_psnstub->push_back(nPS);
       m_trk_nstub->push_back(tmp_trk_nstub);
+      edm::Ptr< TrackingParticle > my_tp = MCTruthTTTrackHandle->findTrackingParticlePtr(l1track_ptr);
+      if(!my_tp.isNull()) tmp_eventid = my_tp->eventId().event();
+      if (MCTruthTTTrackHandle->isGenuine(l1track_ptr) && tmp_eventid==0) tmp_trk_genuine = 1;
       m_trk_genuine->push_back(tmp_trk_genuine);
       m_trk_loose->push_back(tmp_trk_loose);
       m_trk_unknown->push_back(tmp_trk_unknown);
       m_trk_combinatoric->push_back(tmp_trk_combinatoric);
 	}
-      }
+     // }
 
       // ----------------------------------------------------------------------------------------------
       // for studying the fake rate
@@ -1341,7 +1349,8 @@ for (jetIter = TwoLayerTkJetHandle->begin(); jetIter != TwoLayerTkJetHandle->end
         m_2ltrkjet_p->push_back(jetIter->p());
 }
 */
-   if(L1TwoLayerInputPtrs.size()>0){
+/* 
+  if(L1TwoLayerInputPtrs.size()>0){
     maxzbin mzb;
 
        L2_cluster(L1TwoLayerInputPtrs, ttrk, tdtrk,ttdtrk,mzb);
@@ -1358,7 +1367,7 @@ for (jetIter = TwoLayerTkJetHandle->begin(); jetIter != TwoLayerTkJetHandle->end
         //m_2ltrkjet_p->push_back(jetIter->p());
 	}
 }
-
+*/
 reco::PFJetCollection::const_iterator PFjetIter;
 for(PFjetIter=PFJetHandle->begin(); PFjetIter!=PFJetHandle->end(); ++PFjetIter){
         m_PFjet_phi->push_back(PFjetIter->phi());
@@ -1446,6 +1455,7 @@ void L1TrackJetFastProducer::FillCaloJets(Handle<reco::PFJetCollection> PFCaloJe
 	
    }
 }
+/*
 void L1TrackJetFastProducer::L2_cluster(vector< Ptr< L1TTTrackType > > L1TrackPtrs, vector<int>ttrk, vector<int>tdtrk,vector<int>ttdtrk,maxzbin &mzb){
   const int nz = Zbins;
   maxzbin  all_zbins[nz];
@@ -1823,6 +1833,7 @@ etaphibin * L1TrackJetFastProducer::L1_cluster(etaphibin *phislice){
   }
   return clusters;
 }
+*/
 ///////////////////////////
 // DEFINE THIS AS A PLUG-IN
 DEFINE_FWK_MODULE(L1TrackJetFastProducer);

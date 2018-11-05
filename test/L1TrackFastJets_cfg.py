@@ -84,8 +84,8 @@ process.L1TrackJetsFast= cms.EDAnalyzer('L1TrackJetFastProducer',
                                          # when = 1 : saturation. Tracks with PT above PTMAX are set to PT=PTMAX.
      doTightChi2 = cms.bool( True ),    # chi2dof < 5 for tracks with PT > 10
      #DeltaZ0Cut=cms.double(0.5),
-     DeltaZ0Cut=cms.double(0.5),
-     #DeltaZ0Cut=cms.double(999999999999999.),
+     #DeltaZ0Cut=cms.double(0.5),
+     DeltaZ0Cut=cms.double(999999999999999.),
      CONESize=cms.double(0.3)
 )
 #process.out = cms.OutputModule( "PoolOutputModule",
