@@ -221,6 +221,33 @@ vector< Ptr< L1TTTrackType > > L1TwoLayerInputPtrs;
   std::vector<float>* m_trk_matchtp_dxy;
   std::vector<float>* m_trk_bconsist;
   std::vector<float>* m_trk_sconsist;
+  std::vector<int>*   m_trk_nlayersTOB;
+  std::vector<int>*   m_trk_nlayersTID;
+  std::vector<int>*  m_trk_layer1TID;
+  std::vector<int>*  m_trk_layer2TID;
+  std::vector<int>*  m_trk_layer3TID;
+  std::vector<int>*  m_trk_layer4TID;
+  std::vector<int>*  m_trk_layer5TID;
+  std::vector<int>*  m_trk_layer1TOB;
+  std::vector<int>*  m_trk_layer2TOB;
+  std::vector<int>*  m_trk_layer3TOB;
+  std::vector<int>*  m_trk_layer4TOB;
+  std::vector<int>*  m_trk_layer5TOB;
+  std::vector<int>*  m_trk_layer6TOB;
+
+
+  std::vector<float>*  m_trk_layer1TIDBend;
+  std::vector<float>*  m_trk_layer2TIDBend;
+  std::vector<float>*  m_trk_layer3TIDBend;
+  std::vector<float>*  m_trk_layer4TIDBend;
+  std::vector<float>*  m_trk_layer5TIDBend;
+  std::vector<float>*  m_trk_layer1TOBBend;
+  std::vector<float>*  m_trk_layer2TOBBend;
+  std::vector<float>*  m_trk_layer3TOBBend;
+  std::vector<float>*  m_trk_layer4TOBBend;
+  std::vector<float>*  m_trk_layer5TOBBend;
+  std::vector<float>*  m_trk_layer6TOBBend;
+
   // all tracking particles
   std::vector<float>* m_tp_p;
   std::vector<float>* m_tp_pt;
@@ -410,6 +437,30 @@ void L1TrackJetFastProducer::beginJob()
   m_trk_matchtp_dxy = new std::vector<float>;
   m_trk_bconsist=new std::vector<float>;
   m_trk_sconsist=new std::vector<float>;
+  m_trk_nlayersTOB=new std::vector<int>;
+  m_trk_layer1TIDBend=new std::vector<float>;
+  m_trk_layer2TIDBend=new std::vector<float>;
+  m_trk_layer3TIDBend=new std::vector<float>;
+  m_trk_layer4TIDBend=new std::vector<float>;
+  m_trk_layer5TIDBend=new std::vector<float>;
+  m_trk_layer1TOBBend=new std::vector<float>;
+  m_trk_layer2TOBBend=new std::vector<float>;
+  m_trk_layer3TOBBend=new std::vector<float>;
+  m_trk_layer4TOBBend=new std::vector<float>;
+  m_trk_layer5TOBBend=new std::vector<float>;
+  m_trk_layer6TOBBend=new std::vector<float>;
+  m_trk_nlayersTID=new std::vector<int>;
+  m_trk_layer1TID=new std::vector<int>;
+  m_trk_layer2TID=new std::vector<int>;
+  m_trk_layer3TID=new std::vector<int>;
+  m_trk_layer4TID=new std::vector<int>;
+  m_trk_layer5TID=new std::vector<int>;
+  m_trk_layer1TOB=new std::vector<int>;
+  m_trk_layer2TOB=new std::vector<int>;
+  m_trk_layer3TOB=new std::vector<int>;
+  m_trk_layer4TOB=new std::vector<int>;
+  m_trk_layer5TOB=new std::vector<int>;
+  m_trk_layer6TOB=new std::vector<int>;
   m_tp_p     = new std::vector<float>;
   m_tp_pt     = new std::vector<float>;
   m_tp_eta    = new std::vector<float>;
@@ -515,6 +566,31 @@ void L1TrackJetFastProducer::beginJob()
     eventTree->Branch("trk_psnstub", &m_trk_psnstub);
     eventTree->Branch("trk_sconsist", &m_trk_sconsist);
     eventTree->Branch("trk_bconsist", &m_trk_bconsist);
+    eventTree->Branch("trk_nlayersTOB",&m_trk_nlayersTOB);
+    eventTree->Branch("trk_nlayersTID",&m_trk_nlayersTID);
+    eventTree->Branch("trk_layer1TIDBend",&m_trk_layer1TIDBend);
+    eventTree->Branch("trk_layer2TIDBend",&m_trk_layer2TIDBend);
+    eventTree->Branch("trk_layer3TIDBend",&m_trk_layer3TIDBend);
+    eventTree->Branch("trk_layer4TIDBend",&m_trk_layer4TIDBend);
+    eventTree->Branch("trk_layer5TIDBend",&m_trk_layer5TIDBend);
+    eventTree->Branch("trk_nlayersTID",&m_trk_nlayersTID);
+    eventTree->Branch("trk_layer1TID",&m_trk_layer1TID);
+    eventTree->Branch("trk_layer2TID",&m_trk_layer2TID);
+    eventTree->Branch("trk_layer3TID",&m_trk_layer3TID);
+    eventTree->Branch("trk_layer4TID",&m_trk_layer4TID);
+    eventTree->Branch("trk_layer5TID",&m_trk_layer5TID);
+    eventTree->Branch("trk_layer1TOB",&m_trk_layer1TOB);
+    eventTree->Branch("trk_layer2TOB",&m_trk_layer2TOB);
+    eventTree->Branch("trk_layer3TOB",&m_trk_layer3TOB);
+    eventTree->Branch("trk_layer4TOB",&m_trk_layer4TOB);
+    eventTree->Branch("trk_layer5TOB",&m_trk_layer5TOB);
+    eventTree->Branch("trk_layer6TOB",&m_trk_layer6TOB);
+    eventTree->Branch("trk_layer1TOBBend",&m_trk_layer1TOBBend);
+    eventTree->Branch("trk_layer2TOBBend",&m_trk_layer2TOBBend);
+    eventTree->Branch("trk_layer3TOBBend",&m_trk_layer3TOBBend);
+    eventTree->Branch("trk_layer4TOBBend",&m_trk_layer4TOBBend);
+    eventTree->Branch("trk_layer5TOBBend",&m_trk_layer5TOBBend);
+    eventTree->Branch("trk_layer6TOBBend",&m_trk_layer6TOBBend);
 
     eventTree->Branch("trk_genuine",      &m_trk_genuine);
     eventTree->Branch("trk_loose",        &m_trk_loose);
@@ -637,6 +713,31 @@ void L1TrackJetFastProducer::analyze(const Event& iEvent, const EventSetup& iSet
     m_trk_psnstub->clear();
     m_trk_sconsist->clear();
     m_trk_bconsist->clear();
+    m_trk_nlayersTOB->clear();
+    m_trk_nlayersTID->clear();
+    m_trk_layer1TIDBend->clear();
+    m_trk_layer2TIDBend->clear();
+    m_trk_layer3TIDBend->clear();
+    m_trk_layer4TIDBend->clear();
+    m_trk_layer5TIDBend->clear();
+    m_trk_nlayersTID->clear();
+    m_trk_layer1TID->clear();
+    m_trk_layer2TID->clear();
+    m_trk_layer3TID->clear();
+    m_trk_layer4TID->clear();
+    m_trk_layer5TID->clear();
+    m_trk_layer1TOBBend->clear();
+    m_trk_layer2TOBBend->clear();
+    m_trk_layer3TOBBend->clear();
+    m_trk_layer4TOBBend->clear();
+    m_trk_layer5TOBBend->clear();
+    m_trk_layer6TOBBend->clear();
+    m_trk_layer1TOB->clear();
+    m_trk_layer2TOB->clear();
+    m_trk_layer3TOB->clear();
+    m_trk_layer4TOB->clear();
+    m_trk_layer5TOB->clear();
+    m_trk_layer6TOB->clear();
     m_trk_genuine->clear();
     m_trk_loose->clear();
     m_trk_unknown->clear();
@@ -922,6 +1023,10 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
            float tmp_trk_bendchi2 = 0;    
   float sigma_bend1 = 0.463;
   float sigma_bend2 = 0.463;
+    int NLayersTOB=0;
+    int NLayersTID=0;
+     int hasStubInLayer[11] = {0};
+     float BendStubInLayer[11] = {0.0};
     for (unsigned int istub=0; istub<(unsigned int)theStubs.size(); istub++) {
 	  DetId detIdStub = theTrackerGeom->idToDet( ( theStubs.at(istub)->getClusterRef(0))->getDetId() )->geographicalId();	
           MeasurementPoint coords = theStubs.at(istub)->getClusterRef(0)->findAverageLocalCoordinatesCentered();
@@ -933,19 +1038,27 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
         if ( detIdStub.subdetId()==StripSubdetector::TOB ) {
           isBarrel = true;
           layer  = static_cast<int>(tTopo->layer(detIdStub));
+	//hasStubInLayer[layer-1]=1;
+	hasStubInLayer[layer-1]=1;
+	//std::cout<<"Stubs in TOB Layer "<<layer<<std::endl;
+	  ++NLayersTOB;
         }
         else if ( detIdStub.subdetId()==StripSubdetector::TID ) {
           isBarrel = false;
           layer  = static_cast<int>(tTopo->layer(detIdStub));
-          layer+=5;
-        }
+          ++NLayersTID; 
+	//std::cout<<"Stubs in TID Layer "<<layer<<std::endl;
+	hasStubInLayer[layer+5]=1;
 
+        // layer+=5;
+        }
         float pitch = 0.089;
 
         if (theTrackerGeom->getDetectorType(detIdStub)==TrackerGeometry::ModuleType::Ph2PSP){
           pitch = 0.099;
 	  ++nPS;
         }
+//	std::cout<<"Stubs in Layers "<<l<<" "<<hasStubInLayer[l]<<std::endl;
         double tmp_stub_z=posStub.z();
         double tmp_stub_r=posStub.perp();
         //double tmp_stub_phi=posStub.phi();
@@ -982,7 +1095,9 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
 
        // float qOverPtDiff = 1.0/tmp_trk_signedPt - qOverPt;
         float tmp_bend_diff = trackBend-stubBend;
-
+	if(isBarrel)BendStubInLayer[layer-1]=tmp_bend_diff;	
+	else BendStubInLayer[layer+5]=tmp_bend_diff;
+	
         //float trackBend = -(1.8*0.57*tmp_stub_r/100)/(pitch*tmp_matchtrk_pt);
         //if (stub_tp_charge < 0 && stub_tp_charge!=-999) trackBend = -trackBend;
         if (fabs(tmp_trk_signedPt)<4){
@@ -1055,6 +1170,26 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       m_trk_eta->push_back(tmp_trk_eta);
       m_trk_phi->push_back(tmp_trk_phi);
       m_trk_z0 ->push_back(tmp_trk_z0);
+      m_trk_nlayersTOB->push_back(NLayersTOB);
+      m_trk_nlayersTID->push_back(NLayersTID);
+	for(unsigned int l=0; l<11; ++l){
+	if(l<=5){
+	if(l==0){m_trk_layer1TOB->push_back(hasStubInLayer[l]); m_trk_layer1TOBBend->push_back(BendStubInLayer[l]);}
+	if(l==1){m_trk_layer2TOB->push_back(hasStubInLayer[l]);  m_trk_layer2TOBBend->push_back(BendStubInLayer[l]);}
+	if(l==2){m_trk_layer3TOB->push_back(hasStubInLayer[l]); m_trk_layer3TOBBend->push_back(BendStubInLayer[l]);}
+	if(l==3){m_trk_layer4TOB->push_back(hasStubInLayer[l]); m_trk_layer4TOBBend->push_back(BendStubInLayer[l]);}
+	if(l==4){m_trk_layer5TOB->push_back(hasStubInLayer[l]); m_trk_layer5TOBBend->push_back(BendStubInLayer[l]);}
+	if(l==5){m_trk_layer6TOB->push_back(hasStubInLayer[l]); m_trk_layer6TOBBend->push_back(BendStubInLayer[l]);}
+		}	
+	else{
+	if(l==6){m_trk_layer1TID->push_back(hasStubInLayer[l]); m_trk_layer1TIDBend->push_back(BendStubInLayer[l]);}
+	if(l==7){m_trk_layer2TID->push_back(hasStubInLayer[l]); m_trk_layer1TIDBend->push_back(BendStubInLayer[l]);}
+	if(l==8){m_trk_layer3TID->push_back(hasStubInLayer[l]);	m_trk_layer1TIDBend->push_back(BendStubInLayer[l]);}
+	if(l==9){m_trk_layer4TID->push_back(hasStubInLayer[l]);m_trk_layer1TIDBend->push_back(BendStubInLayer[l]);}
+	if(l==10){m_trk_layer1TID->push_back(hasStubInLayer[l]);	m_trk_layer1TIDBend->push_back(BendStubInLayer[l]);}
+		}
+	}	
+
       m_trk_sconsist ->push_back(tmp_trk_stubPtConsistency);
       m_trk_bconsist ->push_back(tmp_trk_bendchi2);
       if (L1Tk_nPar==5) m_trk_d0->push_back(tmp_trk_d0);
