@@ -43,6 +43,7 @@
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/CaloClusterer.h"
+#include "L1Trigger/TrackFindingTracklet/interface/StubPtConsistency.h"
 #include "DataFormats/Phase2L1ParticleFlow/interface/PFCandidate.h"
 //#include "Geometry/CommonDetUnit/interface/GeomDetUnit.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
@@ -218,7 +219,8 @@ vector< Ptr< L1TTTrackType > > L1TwoLayerInputPtrs;
   std::vector<float>* m_trk_matchtp_phi;
   std::vector<float>* m_trk_matchtp_z0;
   std::vector<float>* m_trk_matchtp_dxy;
-
+  std::vector<float>* m_trk_bconsist;
+  std::vector<float>* m_trk_sconsist;
   // all tracking particles
   std::vector<float>* m_tp_p;
   std::vector<float>* m_tp_pt;
@@ -406,7 +408,8 @@ void L1TrackJetFastProducer::beginJob()
   m_trk_matchtp_phi = new std::vector<float>;
   m_trk_matchtp_z0 = new std::vector<float>;
   m_trk_matchtp_dxy = new std::vector<float>;
-
+  m_trk_bconsist=new std::vector<float>;
+  m_trk_sconsist=new std::vector<float>;
   m_tp_p     = new std::vector<float>;
   m_tp_pt     = new std::vector<float>;
   m_tp_eta    = new std::vector<float>;
@@ -510,6 +513,8 @@ void L1TrackJetFastProducer::beginJob()
     eventTree->Branch("trk_chi2",  &m_trk_chi2);
     eventTree->Branch("trk_nstub", &m_trk_nstub);
     eventTree->Branch("trk_psnstub", &m_trk_psnstub);
+    eventTree->Branch("trk_sconsist", &m_trk_sconsist);
+    eventTree->Branch("trk_bconsist", &m_trk_bconsist);
 
     eventTree->Branch("trk_genuine",      &m_trk_genuine);
     eventTree->Branch("trk_loose",        &m_trk_loose);
@@ -630,18 +635,21 @@ void L1TrackJetFastProducer::analyze(const Event& iEvent, const EventSetup& iSet
     m_trk_chi2->clear();
     m_trk_nstub->clear();
     m_trk_psnstub->clear();
+    m_trk_sconsist->clear();
+    m_trk_bconsist->clear();
     m_trk_genuine->clear();
     m_trk_loose->clear();
     m_trk_unknown->clear();
     m_trk_combinatoric->clear();
     m_trk_fake->clear();
+   
     m_trk_matchtp_pdgid->clear();
     m_trk_matchtp_pt->clear();
     m_trk_matchtp_eta->clear();
     m_trk_matchtp_phi->clear();
     m_trk_matchtp_z0->clear();
     m_trk_matchtp_dxy->clear();
-  }
+   }
   
   m_tp_p->clear();
   m_tp_pt->clear();
@@ -812,6 +820,14 @@ if(GenParticleHandle.isValid()){
 
   const TrackerTopology* const tTopo = tTopoHandle.product();
   const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
+  edm::ESHandle<MagneticField> magneticFieldHandle;
+  iSetup.get<IdealMagneticFieldRecord>().get(magneticFieldHandle);
+//  if(!magneticFieldHandle.isValid())std::cout<<" Mag field not present "<<std::endl;
+//  //  else {
+    const MagneticField* theMagneticField = magneticFieldHandle.product();
+      double mMagneticFieldStrength = theMagneticField->inTesla(GlobalPoint(0,0,0)).z();
+//        //std::cout<<" Mag field "<<mMagneticFieldStrength<<std::endl;
+
 //Gen Jet branches
 std::vector<float>genConstpt;
 std::vector<float>genConsteta;
@@ -885,7 +901,7 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       float tmp_trk_eta  = iterL1Track->getMomentum(L1Tk_nPar).eta();
       float tmp_trk_phi  = iterL1Track->getMomentum(L1Tk_nPar).phi();
       float tmp_trk_z0   = iterL1Track->getPOCA(L1Tk_nPar).z(); //cm
-      
+          float tmp_trk_stubPtConsistency = StubPtConsistency::getConsistency(TTTrackHandle->at(this_l1track-1), theTrackerGeom, tTopo,mMagneticFieldStrength,L1Tk_nPar); 
       float tmp_trk_d0 = -999;
       if (L1Tk_nPar == 5) {
 	float tmp_trk_x0   = iterL1Track->getPOCA(L1Tk_nPar).x();
@@ -900,9 +916,85 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       if (tmp_trk_pt < TP_minPt) continue;
       if (fabs(tmp_trk_eta) > TP_maxEta) continue;
       if (fabs(tmp_trk_z0) > TP_maxZ0) continue;
-	        std::vector< Ref< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > >, TTStub< Ref_Phase2TrackerDigi_ > > >  theStubs =  iterL1Track-> getStubRefs() ;
         int nPS=0;
-        for (unsigned int istub=0; istub<(unsigned int)theStubs.size(); istub++) {
+        float tmp_trk_signedPt = 0.3*3.811202/100.0/(iterL1Track->getRInv());
+	        std::vector< Ref< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > >, TTStub< Ref_Phase2TrackerDigi_ > > >  theStubs =  iterL1Track-> getStubRefs() ;
+           float tmp_trk_bendchi2 = 0;    
+  float sigma_bend1 = 0.463;
+  float sigma_bend2 = 0.463;
+    for (unsigned int istub=0; istub<(unsigned int)theStubs.size(); istub++) {
+	  DetId detIdStub = theTrackerGeom->idToDet( ( theStubs.at(istub)->getClusterRef(0))->getDetId() )->geographicalId();	
+          MeasurementPoint coords = theStubs.at(istub)->getClusterRef(0)->findAverageLocalCoordinatesCentered();
+	 const GeomDetUnit* det0 = theTrackerGeom->idToDetUnit( detIdStub );
+        const GeomDet* theGeomDet = theTrackerGeom->idToDet(detIdStub);
+        Global3DPoint posStub = theGeomDet->surface().toGlobal( theGeomDet->topology().localPosition(coords) );
+        bool isBarrel = false;
+        int layer=-999999;
+        if ( detIdStub.subdetId()==StripSubdetector::TOB ) {
+          isBarrel = true;
+          layer  = static_cast<int>(tTopo->layer(detIdStub));
+        }
+        else if ( detIdStub.subdetId()==StripSubdetector::TID ) {
+          isBarrel = false;
+          layer  = static_cast<int>(tTopo->layer(detIdStub));
+          layer+=5;
+        }
+
+        float pitch = 0.089;
+
+        if (theTrackerGeom->getDetectorType(detIdStub)==TrackerGeometry::ModuleType::Ph2PSP){
+          pitch = 0.099;
+	  ++nPS;
+        }
+        double tmp_stub_z=posStub.z();
+        double tmp_stub_r=posStub.perp();
+        //double tmp_stub_phi=posStub.phi();
+        //TMTT's qOverPt variables
+        const GeomDetUnit* det1 = theTrackerGeom->idToDetUnit( tTopo->partnerDetId( detIdStub ) );
+        const PixelGeomDetUnit* unit = reinterpret_cast<const PixelGeomDetUnit*>( det0 );
+        const PixelTopology& topo = unit->specificTopology();
+        bool tiltedBarrel = (isBarrel && tTopo->tobSide(detIdStub)!=3);
+        float stripPitch = topo.pitch().first;
+        float R0 = det0->position().perp();
+        float R1 = det1->position().perp();
+        float Z0 = det0->position().z();
+        float Z1 = det1->position().z();
+        float modMinR = std::min(R0,R1);
+        float modMaxR = std::max(R0,R1);
+        float modMinZ = std::min(Z0,Z1);
+        float modMaxZ = std::max(Z0,Z1);
+
+
+        float sensorSpacing = sqrt((modMaxR-modMinR)*(modMaxR-modMinR) + (modMaxZ-modMinZ)*(modMaxZ-modMinZ));
+        float pitchOverSep = stripPitch/sensorSpacing;//stripPitch = 0.01
+        float dphiOverBendCorrection;
+        if (tiltedBarrel) dphiOverBendCorrection= 0.886454*fabs(tmp_stub_z)/tmp_stub_r+0.504148;
+        else if (isBarrel) dphiOverBendCorrection=1;
+        else dphiOverBendCorrection= fabs(tmp_stub_z)/tmp_stub_r;
+        //float dphiOverBend = pitchOverSep*dphiOverBendCorrection;
+        float stubBend = theStubs.at(istub)->getTriggerBend();
+        if (!isBarrel && tmp_stub_z<0.0) stubBend=-stubBend;
+        //float qOverPt = -(stubBend*dphiOverBend)/(tmp_stub_r*mMagneticFieldStrength*(3.0E8/2.0E11));//0.57 = B*c/(2E11*strip pitch)
+        float trackBend = -(sensorSpacing*0.57*tmp_stub_r/10)/(pitch*tmp_trk_signedPt*dphiOverBendCorrection);
+        //float trigDisplace = theStubs.at(istub)->getTriggerDisplacement();
+        //float trigOffset = theStubs.at(istub)->getTriggerOffset();
+        //float trigPos = theStubs.at(istub)->getTriggerPosition();
+
+       // float qOverPtDiff = 1.0/tmp_trk_signedPt - qOverPt;
+        float tmp_bend_diff = trackBend-stubBend;
+
+        //float trackBend = -(1.8*0.57*tmp_stub_r/100)/(pitch*tmp_matchtrk_pt);
+        //if (stub_tp_charge < 0 && stub_tp_charge!=-999) trackBend = -trackBend;
+        if (fabs(tmp_trk_signedPt)<4){
+          tmp_trk_bendchi2 += (tmp_bend_diff*tmp_bend_diff)/(sigma_bend1*sigma_bend1);
+        }
+        else {
+          tmp_trk_bendchi2 += (tmp_bend_diff*tmp_bend_diff)/(sigma_bend2*sigma_bend2);
+        }
+        }
+      tmp_trk_bendchi2=tmp_trk_bendchi2/(tmp_trk_nstub); 
+  
+/*      for (unsigned int istub=0; istub<(unsigned int)theStubs.size(); istub++) {
           bool isPS = false;
 	  DetId detIdStub = theTrackerGeom->idToDet( ( theStubs.at(istub)->getClusterRef(0))->getDetId() )->geographicalId();	
 	        const GeomDetUnit* det0 = theTrackerGeom->idToDetUnit( detIdStub );
@@ -916,6 +1008,7 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       // }
        if (isPS) nPS ++;
         }
+*/
       //std::cout<<"n PS hits "<<nPS<<std::endl;
       int tmp_trk_genuine = 0;
       int tmp_trk_loose = 0;
@@ -962,6 +1055,8 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
       m_trk_eta->push_back(tmp_trk_eta);
       m_trk_phi->push_back(tmp_trk_phi);
       m_trk_z0 ->push_back(tmp_trk_z0);
+      m_trk_sconsist ->push_back(tmp_trk_stubPtConsistency);
+      m_trk_bconsist ->push_back(tmp_trk_bendchi2);
       if (L1Tk_nPar==5) m_trk_d0->push_back(tmp_trk_d0);
       else m_trk_d0->push_back(999.);
       m_trk_chi2 ->push_back(tmp_trk_chi2/(2*tmp_trk_nstub - L1Tk_nPar));
