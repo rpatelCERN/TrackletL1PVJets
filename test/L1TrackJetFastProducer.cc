@@ -573,7 +573,6 @@ void L1TrackJetFastProducer::beginJob()
     eventTree->Branch("trk_layer3TIDBend",&m_trk_layer3TIDBend);
     eventTree->Branch("trk_layer4TIDBend",&m_trk_layer4TIDBend);
     eventTree->Branch("trk_layer5TIDBend",&m_trk_layer5TIDBend);
-    eventTree->Branch("trk_nlayersTID",&m_trk_nlayersTID);
     eventTree->Branch("trk_layer1TID",&m_trk_layer1TID);
     eventTree->Branch("trk_layer2TID",&m_trk_layer2TID);
     eventTree->Branch("trk_layer3TID",&m_trk_layer3TID);

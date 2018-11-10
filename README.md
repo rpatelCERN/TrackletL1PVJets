@@ -9,7 +9,7 @@ git cms-init
 
 cp -r /nfs/hepwrk01/work/rish/L1TkNtupler/MLTraining/CMSSW_10_1_7/src/* .
 
-git clone -b NtupleVar.v1 https://gitlab.cern.ch/L1TrackJetsPrimaryVtx/TrackletL1PVJets.git
+git clone -b NtupleVar.v1 git@github.com:rpatelCERN/TrackletL1PVJets.git
 
 rm -rf ./L1Trigger/TrackletL1PVJets
 
