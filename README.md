@@ -4,8 +4,6 @@ cd CMSSW_10_1_7/src/
 
 cmsenv
 
-git cms-init
-
 
 cp -r /nfs/hepwrk01/work/rish/L1TkNtupler/MLTraining/CMSSW_10_1_7/src/* .
 
