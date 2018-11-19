@@ -1182,10 +1182,10 @@ for (unsigned int ijet=0;ijet<JetOutputs_.size();++ijet) {
 		}	
 	else{
 	if(l==6){m_trk_layer1TID->push_back(hasStubInLayer[l]); m_trk_layer1TIDBend->push_back(BendStubInLayer[l]);}
-	if(l==7){m_trk_layer2TID->push_back(hasStubInLayer[l]); m_trk_layer1TIDBend->push_back(BendStubInLayer[l]);}
-	if(l==8){m_trk_layer3TID->push_back(hasStubInLayer[l]);	m_trk_layer1TIDBend->push_back(BendStubInLayer[l]);}
-	if(l==9){m_trk_layer4TID->push_back(hasStubInLayer[l]);m_trk_layer1TIDBend->push_back(BendStubInLayer[l]);}
-	if(l==10){m_trk_layer1TID->push_back(hasStubInLayer[l]);	m_trk_layer1TIDBend->push_back(BendStubInLayer[l]);}
+	if(l==7){m_trk_layer2TID->push_back(hasStubInLayer[l]); m_trk_layer2TIDBend->push_back(BendStubInLayer[l]);}
+	if(l==8){m_trk_layer3TID->push_back(hasStubInLayer[l]);	m_trk_layer3TIDBend->push_back(BendStubInLayer[l]);}
+	if(l==9){m_trk_layer4TID->push_back(hasStubInLayer[l]);m_trk_layer4TIDBend->push_back(BendStubInLayer[l]);}
+	if(l==10){m_trk_layer5TID->push_back(hasStubInLayer[l]);	m_trk_layer5TIDBend->push_back(BendStubInLayer[l]);}
 		}
 	}	
 
